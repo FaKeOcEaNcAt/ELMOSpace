@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="app_background">#FFF7F4ED</color>
+    <color name="nav_background">#FFFCFAF5</color>
+    <color name="nav_selected">#FFD5543F</color>
+    <color name="nav_unselected">#FF77736B</color>
+    <color name="nav_divider">#1F302D28</color>
+    <color name="error_text">#FF302D28</color>
+    <color name="settings_card">#FFFFFFFF</color>
+    <color name="settings_section">#FF9B5B42</color>
+    <color name="beta_background">#FFFFE0A3</color>
+    <color name="beta_text">#FF6E4300</color>
+    <color name="danger_text">#FFC23B32</color>
+</resources>

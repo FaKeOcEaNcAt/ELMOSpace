@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settingsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/nav_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+        <TextView
+            android:id="@+id/settingsBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="@string/back_symbol"
+            android:textColor="@color/error_text"
+            android:textSize="36sp" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingEnd="44dp"
+            android:text="@string/settings_title"
+            android:textColor="@color/error_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SettingsSectionTitle" android:text="@string/settings_official_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/privacyRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/privacy_settings" />
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/feedbackRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/feedback" />
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/logoutRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/official_logout" android:textColor="@color/danger_text" />
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:text="@string/official_page_hint"
+                    android:textColor="@color/nav_unselected"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_security_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/deviceSecurityCheckRow" style="@style/ComfortSettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/device_security_check" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/device_security_check_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/deviceSecurityCheckSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_app_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/autoSignRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/auto_sign_in" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/auto_sign_in_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/autoSignSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/signRefreshRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/sign_refresh_home" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/sign_refresh_home_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/signRefreshSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/scheduledSignRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/scheduled_sign_in" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/scheduled_sign_in_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/scheduledSignSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/timeRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/sign_in_time" />
+                    <TextView android:id="@+id/timeValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/nav_selected" android:textSize="17sp" android:textStyle="bold" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/testScheduledSignRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/test_scheduled_sign_in" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/test_scheduled_sign_in_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="@string/scheduled_service_notice"
+                    android:textColor="@color/nav_unselected"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_display_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/darkModeRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/dark_mode" />
+                    <TextView
+                        android:id="@+id/darkModeValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/nav_selected"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <TextView
+                    style="@style/SettingsRowSummary"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp"
+                    android:text="@string/dark_mode_adaptation_notice" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_interaction_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/enhancedLikeRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/enhanced_like_interaction" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/enhanced_like_interaction_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/enhancedLikeSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View android:id="@+id/likeEffectOnUnlikeDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectOnUnlikeRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/like_effect_on_unlike" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/like_effect_on_unlike_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/likeEffectOnUnlikeSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View android:id="@+id/likeEffectDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/select_like_effect" />
+                    <TextView
+                        android:id="@+id/likeEffectValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/nav_selected"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <View android:id="@+id/likeEffectDurationDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectDurationRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/like_effect_duration" />
+                    <TextView
+                        android:id="@+id/likeEffectDurationValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/nav_selected"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <View android:id="@+id/likeEffectSizeDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectSizeRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/like_effect_size" />
+                    <TextView
+                        android:id="@+id/likeEffectSizeValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/nav_selected"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_preload_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/mobileDataWarningRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/mobile_data_warning" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/mobile_data_warning_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/mobileDataWarningSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/mobileDataUsageRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/mobile_data_usage_title" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/mobile_data_usage_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/feedPreloadRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/feed_preload" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/feed_preload_summary" />
+                    </LinearLayout>
+                    <Switch android:id="@+id/feedPreloadSwitch" style="@style/SettingsSwitch" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/preloadScreensRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/preload_screens" />
+                    <TextView
+                        android:id="@+id/preloadScreensValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/nav_selected"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="@string/feed_preload_notice"
+                    android:textColor="@color/nav_unselected"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_permission_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_internet" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_internet_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/PermissionRequired" android:text="@string/permission_required" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_network_state" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_network_state_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/PermissionRequired" android:text="@string/permission_required" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_foreground_service" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_foreground_service_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/PermissionRequired" android:text="@string/permission_required" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_boot_completed" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_boot_completed_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/PermissionRequired" android:text="@string/permission_required" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/PermissionActionRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_notification" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_notification_summary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:orientation="vertical">
+                        <TextView android:id="@+id/notificationPermissionStatus" style="@style/PermissionStatus" />
+                        <TextView android:id="@+id/notificationPermissionButton" style="@style/PermissionAction" android:text="@string/permission_go_change" />
+                    </LinearLayout>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/PermissionActionRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_exact_alarm" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_exact_alarm_summary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:orientation="vertical">
+                        <TextView android:id="@+id/exactAlarmPermissionStatus" style="@style/PermissionStatus" />
+                        <TextView android:id="@+id/exactAlarmPermissionButton" style="@style/PermissionAction" android:text="@string/permission_go_change" />
+                    </LinearLayout>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/PermissionActionRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_camera" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_camera_summary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:orientation="vertical">
+                        <TextView android:id="@+id/cameraPermissionStatus" style="@style/PermissionStatus" />
+                        <TextView android:id="@+id/cameraPermissionButton" style="@style/PermissionAction" android:text="@string/permission_go_change" />
+                    </LinearLayout>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout style="@style/PermissionActionRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/permission_location" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/permission_location_summary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:orientation="vertical">
+                        <TextView android:id="@+id/locationPermissionStatus" style="@style/PermissionStatus" />
+                        <TextView android:id="@+id/locationPermissionButton" style="@style/PermissionAction" android:text="@string/permission_go_change" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_power_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/powerPolicyRow" style="@style/PermissionActionRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/power_policy" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/power_policy_summary" />
+                    </LinearLayout>
+                    <TextView android:id="@+id/powerPolicyButton" style="@style/PermissionAction" android:text="@string/power_policy_go_change" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/settings_storage_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/clearCacheRow" style="@style/SettingsRow">
+                    <TextView style="@style/SettingsRowTitle" android:text="@string/clear_cache" />
+                    <TextView
+                        android:id="@+id/cacheSizeValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cache_size_calculating"
+                        android:textColor="@color/nav_unselected"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/about_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_beta_badge" android:text="@string/beta_label" android:textColor="@color/beta_text" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="@string/version_display" android:textColor="@color/error_text" android:textSize="15sp" android:textStyle="bold" />
+                </LinearLayout>
+                <TextView style="@style/AboutParagraph" android:layout_marginTop="18dp" android:text="@string/unofficial_notice" />
+                <TextView style="@style/AboutParagraph" android:layout_marginTop="14dp" android:text="@string/disclaimer" />
+                <TextView style="@style/AboutParagraph" android:layout_marginTop="14dp" android:text="@string/privacy_notice" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/version_history_section" />
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout android:id="@+id/changelogRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/version_history" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/version_history_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

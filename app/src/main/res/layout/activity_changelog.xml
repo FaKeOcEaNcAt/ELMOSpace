@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/changelogRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/nav_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+        <TextView
+            android:id="@+id/changelogBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="@string/back_symbol"
+            android:textColor="@color/error_text"
+            android:textSize="36sp" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingEnd="44dp"
+            android:text="@string/changelog_title"
+            android:textColor="@color/error_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SettingsSectionTitle" android:text="@string/changelog_v026_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v026_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v025_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v025_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v024_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v024_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v023_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v023_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v022_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v022_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v021_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v021_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v020_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v020_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v019_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v019_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v018_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v018_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v017_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v017_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v016_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v016_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v015_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v015_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v014_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v014_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v013_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v013_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v012_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v012_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v011_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v011_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v010_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v010_body" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

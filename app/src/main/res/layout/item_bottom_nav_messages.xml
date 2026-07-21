@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/navMessages"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:background="?android:attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView android:layout_width="23dp" android:layout_height="23dp" android:contentDescription="@null" android:src="@drawable/ic_nav_messages" android:tint="@color/nav_item_tint" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/nav_messages" android:textColor="@color/nav_item_tint" android:textSize="11sp" />
+</LinearLayout>
