@@ -104,7 +104,7 @@
     <string name="sign_refresh_notice_message">可以在设置里面关闭自动更新签到状态（自动刷新界面以实现签到状态更新）</string>
     <string name="scheduled_sign_in">每日定时自动签到</string>
     <string name="scheduled_sign_in_summary">到达设定时间后通过系统精确闹钟短暂运行</string>
-    <string name="sign_in_time">定时签到执行事件</string>
+    <string name="sign_in_time">定时签到执行时间</string>
     <string name="test_scheduled_sign_in">测试定时签到</string>
     <string name="test_scheduled_sign_in_summary">安排 30 秒后的临时定时签到，用于验证当前系统后台限制下是否可触发</string>
     <string name="clear_cache">清除缓存</string>
@@ -129,7 +129,7 @@
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="changelog_title">更新日志</string>
     <string name="changelog_v026_title">V0.1.16 Build2607212327</string>
-    <string name="changelog_v026_body">• 修复首页点赞贴文后未进入历史记录“已点赞的帖文”筛选的问题。\n• 历史记录筛选器强调色调整为 APP 设置内统一橙色。\n• 设置页开关、选择点赞交互特效、深色模式和定时签到时间选择控件统一为橙色强调色。\n• 优化部分设置项高度和开关轨道可见性，减少设置页显示拥挤感。\n• “签到时间”文案调整为“定时签到执行事件”。</string>
+    <string name="changelog_v026_body">• 修复首页点赞贴文后未进入历史记录“已点赞的帖文”筛选的问题。\n• 历史记录筛选器强调色调整为 APP 设置内统一橙色。\n• 设置页开关、选择点赞交互特效、深色模式和定时签到时间选择控件统一为橙色强调色。\n• 优化部分设置项高度和开关轨道可见性，减少设置页显示拥挤感。\n• “签到时间”文案调整为“定时签到执行时间”。</string>
     <string name="changelog_v025_title">V0.1.15 Build2607210036</string>
     <string name="changelog_v025_body">• 应用名称调整为“艾莫空间”。\n• 设置页新增“权限管理”模块，集中展示网络、通知、精确闹钟、相机、定位、前台服务和开机自恢复等权限用途与状态。\n• 可配置权限新增更改前说明，进入系统设置前会提示关闭或调整权限可能影响的功能。\n• 新增“电源管理策略”模块，提供 App 电源管理策略入口，便于在严格后台管理系统中调整省电策略和自启动相关设置。\n• 优化测试定时签到倒计时通知，改为系统通知栏 Chronometer 倒计时，减少后台通知刷新被系统节流的影响。\n• 定时签到检测到当日已签到时，若能读取账号积分，会在结果通知中一并显示当前账号积分。</string>
     <string name="changelog_v024_title">V0.1.14 Build2607202331</string>
