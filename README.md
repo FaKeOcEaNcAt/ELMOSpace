@@ -4,6 +4,12 @@
 
 当前版本：`V0.1.16 Build2607212327`
 
+最新版本下载：
+
+- [直达最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88)
+- [直接下载当前版本 APK](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
+- [查看全部 Releases](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases)
+
 ## 项目状态
 
 - 本项目是同人软件、非官方软件，不代表目标网站或其运营方。
@@ -17,15 +23,18 @@
 
 推荐下载位置：
 
-1. 打开本项目的 GitHub 仓库页面。
-2. 找到右侧或页面上方的 `Releases`。
-3. 进入最新版本的 Release。
-4. 下载其中的 `.apk` 安装包。
-5. 在 Android 手机上安装该 APK。
+1. 打开 [最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88)。
+2. 在页面下方找到 `Assets`。
+3. 下载其中的 `.apk` 安装包。
+4. 在 Android 手机上安装该 APK。
+
+当前版本也可以直接下载：
+
+[ElmoSpace-Beta-V0.1.16-Build2607212327.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
 
 如果你没有使用过 GitHub，可以按下面的方式找：
 
-- 手机浏览器打开仓库链接后，先找页面里的 `Releases` 或 `发行版`。
+- 手机浏览器打开 [项目仓库主页](https://github.com/FaKeOcEaNcAt/ELMOSpace) 后，先找页面里的 `Releases` 或 `发行版`。
 - 如果看不到，可以点页面右上角或浏览器菜单，切换为桌面版网页再找。
 - 下载时请选择 `.apk` 文件，不要下载 `Source code`，源码压缩包不能直接安装。
 
@@ -78,3 +87,11 @@ App 原生层不会主动收集、上传或共享你的个人信息，也不会�
 ## 免责声明
 
 本项目仅用于移动端网页访问体验优化。网页内容、账号服务、社区规则、接口可用性均以官方网站为准。使用本 App 时仍需遵守目标网站的用户协议、社区规则和隐私政策。
+
+## 商标归属声明
+
+本项目为非官方同人软件，与《少女前线2：追放》、其官方网站、官方社区及其运营方不存在官方隶属、授权或合作关系。
+
+《少女前线2：追放》及相关名称、角色、素材、社区内容等权利归其相应权利人所有。
+
+Android 是 Google LLC 的商标。GitHub 是 GitHub, Inc. 的商标。其他商标、服务标志、产品名称和公司名称均归其各自权利人所有。
