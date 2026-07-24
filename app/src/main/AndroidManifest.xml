@@ -62,6 +62,16 @@
             android:theme="@style/Theme.艾莫号停车场" />
 
         <activity
+            android:name=".LikeEffectManagerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.艾莫号停车场" />
+
+        <activity
+            android:name=".LikeEffectAddActivity"
+            android:exported="false"
+            android:theme="@style/Theme.艾莫号停车场" />
+
+        <activity
             android:name=".BrowsingHistoryActivity"
             android:exported="false"
             android:theme="@style/Theme.艾莫号停车场" />

@@ -1,6 +1,7 @@
 package com.profans.elmospace
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.app.ActivityOptions
 import android.app.AlertDialog
 import android.app.Dialog
@@ -13,12 +14,17 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.view.animation.LinearInterpolator
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
 import android.widget.Switch
@@ -28,6 +34,7 @@ import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.animation.addListener
 import androidx.core.content.ContextCompat
 import androidx.annotation.StringRes
 import androidx.core.view.ViewCompat
@@ -45,6 +52,8 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var darkModeValue: TextView
     private lateinit var likeEffectRow: LinearLayout
     private lateinit var likeEffectDivider: View
+    private lateinit var likeEffectManagerRow: LinearLayout
+    private lateinit var likeEffectManagerDivider: View
     private lateinit var likeEffectOnUnlikeRow: LinearLayout
     private lateinit var likeEffectOnUnlikeDivider: View
     private lateinit var likeEffectValue: TextView
@@ -54,11 +63,23 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var likeEffectSizeDivider: View
     private lateinit var likeEffectSizeRow: LinearLayout
     private lateinit var likeEffectSizeValue: TextView
+    private lateinit var likeEffectPreviewDivider: View
+    private lateinit var likeEffectPreviewRow: LinearLayout
+    private lateinit var likeEffectPreviewButton: ImageView
     private lateinit var notificationPermissionStatus: TextView
     private lateinit var exactAlarmPermissionStatus: TextView
     private lateinit var cameraPermissionStatus: TextView
     private lateinit var locationPermissionStatus: TextView
     private var runTestAfterNotificationPermission = false
+    private val likeEffectPreviewHandler = Handler(Looper.getMainLooper())
+    private var likeEffectPreviewRunning = false
+    private val likeEffectPreviewRunnable = object : Runnable {
+        override fun run() {
+            if (!likeEffectPreviewRunning) return
+            spawnLikeEffectPreview()
+            likeEffectPreviewHandler.postDelayed(this, LIKE_EFFECT_PREVIEW_INTERVAL_MS)
+        }
+    }
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -90,6 +111,8 @@ class SettingsActivity : ComponentActivity() {
         darkModeValue = findViewById(R.id.darkModeValue)
         likeEffectRow = findViewById(R.id.likeEffectRow)
         likeEffectDivider = findViewById(R.id.likeEffectDivider)
+        likeEffectManagerRow = findViewById(R.id.likeEffectManagerRow)
+        likeEffectManagerDivider = findViewById(R.id.likeEffectManagerDivider)
         likeEffectOnUnlikeRow = findViewById(R.id.likeEffectOnUnlikeRow)
         likeEffectOnUnlikeDivider = findViewById(R.id.likeEffectOnUnlikeDivider)
         likeEffectValue = findViewById(R.id.likeEffectValue)
@@ -99,6 +122,9 @@ class SettingsActivity : ComponentActivity() {
         likeEffectSizeDivider = findViewById(R.id.likeEffectSizeDivider)
         likeEffectSizeRow = findViewById(R.id.likeEffectSizeRow)
         likeEffectSizeValue = findViewById(R.id.likeEffectSizeValue)
+        likeEffectPreviewDivider = findViewById(R.id.likeEffectPreviewDivider)
+        likeEffectPreviewRow = findViewById(R.id.likeEffectPreviewRow)
+        likeEffectPreviewButton = findViewById(R.id.likeEffectPreviewButton)
         notificationPermissionStatus = findViewById(R.id.notificationPermissionStatus)
         exactAlarmPermissionStatus = findViewById(R.id.exactAlarmPermissionStatus)
         cameraPermissionStatus = findViewById(R.id.cameraPermissionStatus)
@@ -230,8 +256,11 @@ class SettingsActivity : ComponentActivity() {
             likeEffectOnUnlikeSwitch.isChecked = !likeEffectOnUnlikeSwitch.isChecked
         }
         likeEffectRow.setOnClickListener { showLikeEffectPicker() }
+        likeEffectManagerRow.setOnClickListener { openLikeEffectManager() }
         likeEffectDurationRow.setOnClickListener { showLikeEffectDurationPicker() }
         likeEffectSizeRow.setOnClickListener { showLikeEffectSizePicker() }
+        likeEffectPreviewRow.setOnClickListener { toggleLikeEffectPreview() }
+        likeEffectPreviewButton.setOnClickListener { toggleLikeEffectPreview() }
         findViewById<View>(R.id.changelogRow).setOnClickListener { openChangelog() }
 
         findViewById<View>(R.id.clearCacheRow).setOnClickListener { clearWebCache() }
@@ -254,6 +283,12 @@ class SettingsActivity : ComponentActivity() {
             SignInScheduler.scheduleNext(this)
         }
         updatePermissionStatuses()
+        updateLikeEffectValue()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLikeEffectPreview()
     }
 
     private fun applyInsets() {
@@ -439,7 +474,7 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun showLikeEffectPicker() {
-        val options = LikeEffectAssets.pickerOptions
+        val options = LikeEffectAssets.pickerOptions(this)
         val selectedId = AppPreferences.getLikeEffect(this)
         val checked = options.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
         val labels = options.map { it.displayName }.toTypedArray()
@@ -456,6 +491,7 @@ class SettingsActivity : ComponentActivity() {
 
     private fun updateLikeEffectValue() {
         likeEffectValue.text = LikeEffectAssets.findSelection(
+            this,
             AppPreferences.getLikeEffect(this)
         ).displayName
     }
@@ -564,17 +600,122 @@ class SettingsActivity : ComponentActivity() {
         return getString(R.string.like_effect_size_value, number)
     }
 
+    private fun toggleLikeEffectPreview() {
+        if (likeEffectPreviewRunning) {
+            stopLikeEffectPreview()
+        } else {
+            startLikeEffectPreview()
+        }
+    }
+
+    private fun startLikeEffectPreview() {
+        if (likeEffectPreviewRunning) return
+        likeEffectPreviewRunning = true
+        likeEffectPreviewButton.setImageResource(R.drawable.ic_pause)
+        spawnLikeEffectPreview()
+        likeEffectPreviewHandler.postDelayed(
+            likeEffectPreviewRunnable,
+            LIKE_EFFECT_PREVIEW_INTERVAL_MS
+        )
+    }
+
+    private fun stopLikeEffectPreview() {
+        if (!likeEffectPreviewRunning) return
+        likeEffectPreviewRunning = false
+        likeEffectPreviewHandler.removeCallbacks(likeEffectPreviewRunnable)
+        if (::likeEffectPreviewButton.isInitialized) {
+            likeEffectPreviewButton.setImageResource(R.drawable.ic_play_arrow)
+        }
+    }
+
+    private fun spawnLikeEffectPreview() {
+        if (!::likeEffectPreviewButton.isInitialized || !likeEffectPreviewButton.isShown) return
+        val content = window.decorView.findViewById<FrameLayout>(android.R.id.content) ?: return
+        val effectId = AppPreferences.getLikeEffect(this)
+        val option = if (effectId == LikeEffectAssets.RANDOM_ID) {
+            LikeEffectAssets.options(this).random()
+        } else {
+            LikeEffectAssets.find(this, effectId)
+        }
+
+        val multiplier = AppPreferences.getLikeEffectSizeMultiplier(this).coerceIn(1f, 5f)
+        val duration = (AppPreferences.getLikeEffectDurationSeconds(this) * 1000L)
+            .coerceIn(1000L, 10000L)
+        val contentLocation = IntArray(2)
+        val buttonLocation = IntArray(2)
+        content.getLocationOnScreen(contentLocation)
+        likeEffectPreviewButton.getLocationOnScreen(buttonLocation)
+
+        val baseWidth = content.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val size = (
+            baseWidth *
+                LIKE_EFFECT_DETAIL_SIZE_RATIO *
+                LIKE_EFFECT_BASE_SCALE *
+                LIKE_EFFECT_PREVIEW_SIZE_CALIBRATION *
+                multiplier
+        ).toInt().coerceAtLeast(1)
+
+        val startX = buttonLocation[0] - contentLocation[0] +
+            likeEffectPreviewButton.width / 2f - size / 2f
+        val startY = buttonLocation[1] - contentLocation[1] - size * 0.9f
+        val endY = content.height + size * 1.25f
+        val leftTravel = minOf(content.width * 0.28f, size * 4.2f)
+        val jumpHeight = size * 2.4f
+
+        val image = ImageView(this).apply {
+            if (option.type == LikeEffectAssetType.CUSTOM) {
+                setImageURI(Uri.fromFile(LikeEffectCustomAssetRepository.imageFile(this@SettingsActivity, option.fileName)))
+            } else {
+                setImageResource(option.drawableRes)
+            }
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            isClickable = false
+            isFocusable = false
+            alpha = 1f
+            rotation = 0f
+            layoutParams = FrameLayout.LayoutParams(size, size)
+            elevation = 30f
+        }
+        content.addView(image)
+
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            interpolator = LinearInterpolator()
+            this.duration = duration
+            addUpdateListener { animator ->
+                val t = animator.animatedValue as Float
+                val x = startX - leftTravel * t
+                val y = startY -
+                    jumpHeight * 4f * t * (1f - t) +
+                    (endY - startY) * t * t
+                image.translationX = x
+                image.translationY = y
+                image.rotation = -35f * t
+                image.alpha = if (t < 0.86f) 1f else (1f - t) / 0.14f
+            }
+            addListener(
+                onEnd = { content.removeView(image) },
+                onCancel = { content.removeView(image) }
+            )
+            start()
+        }
+    }
+
     private fun updateLikeEffectVisibility(enabled: Boolean) {
+        if (!enabled) stopLikeEffectPreview()
         val visibility = if (enabled) View.VISIBLE else View.GONE
         listOf(
             likeEffectOnUnlikeDivider,
             likeEffectOnUnlikeRow,
             likeEffectDivider,
             likeEffectRow,
+            likeEffectManagerDivider,
+            likeEffectManagerRow,
             likeEffectDurationDivider,
             likeEffectDurationRow,
             likeEffectSizeDivider,
-            likeEffectSizeRow
+            likeEffectSizeRow,
+            likeEffectPreviewDivider,
+            likeEffectPreviewRow
         ).forEach { it.visibility = visibility }
     }
 
@@ -757,10 +898,25 @@ class SettingsActivity : ComponentActivity() {
         startActivity(Intent(this, MobileDataUsageActivity::class.java), options.toBundle())
     }
 
+    private fun openLikeEffectManager() {
+        val options = ActivityOptions.makeCustomAnimation(
+            this,
+            R.anim.settings_enter,
+            R.anim.activity_hold
+        )
+        startActivity(Intent(this, LikeEffectManagerActivity::class.java), options.toBundle())
+    }
+
     @Suppress("DEPRECATION")
     private fun finishWithTransition() {
         finish()
         overridePendingTransition(R.anim.activity_hold, R.anim.settings_exit)
     }
 
+    private companion object {
+        private const val LIKE_EFFECT_PREVIEW_INTERVAL_MS = 1000L
+        private const val LIKE_EFFECT_BASE_SCALE = 2.5f
+        private const val LIKE_EFFECT_DETAIL_SIZE_RATIO = 0.0533333333f
+        private const val LIKE_EFFECT_PREVIEW_SIZE_CALIBRATION = 0.75f
+    }
 }

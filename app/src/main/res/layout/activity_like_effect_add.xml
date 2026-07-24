@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/likeEffectAddRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/nav_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/likeEffectAddBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back_symbol"
+            android:padding="10dp"
+            android:src="@drawable/ic_arrow_back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingEnd="44dp"
+            android:text="@string/like_effect_add_title"
+            android:textColor="@color/error_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                style="@style/SettingsSectionTitle"
+                android:text="@string/like_effect_add_title" />
+
+            <LinearLayout
+                style="@style/SettingsCard"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/likeEffectAddPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="180dp"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/bg_picker_wheel"
+                    android:contentDescription="@null"
+                    android:padding="18dp"
+                    android:scaleType="fitCenter" />
+
+                <EditText
+                    android:id="@+id/likeEffectNameInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="14dp"
+                    android:backgroundTint="@color/nav_selected"
+                    android:hint="@string/like_effect_name_hint"
+                    android:inputType="text"
+                    android:maxLength="30"
+                    android:maxLines="1"
+                    android:textColor="@color/error_text"
+                    android:textColorHint="@color/nav_unselected"
+                    android:textSize="15sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/likeEffectChooseImage"
+                        style="@style/PermissionAction"
+                        android:text="@string/like_effect_choose_image" />
+
+                    <TextView
+                        android:id="@+id/likeEffectSave"
+                        style="@style/PermissionAction"
+                        android:layout_marginStart="10dp"
+                        android:text="@string/like_effect_save" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                style="@style/AboutParagraph"
+                android:layout_marginTop="12dp"
+                android:text="@string/like_effect_add_notice" />
+
+            <TextView
+                style="@style/SettingsSectionTitle"
+                android:layout_marginTop="22dp"
+                android:text="@string/like_effect_tool_section" />
+
+            <LinearLayout style="@style/SettingsCard">
+                <LinearLayout
+                    android:id="@+id/likeEffectCompressTool"
+                    style="@style/SettingsRow">
+                    <TextView
+                        style="@style/SettingsRowTitle"
+                        android:text="@string/like_effect_tool_compress" />
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+                <LinearLayout
+                    android:id="@+id/likeEffectRemoveBgTool"
+                    style="@style/SettingsRow">
+                    <TextView
+                        style="@style/SettingsRowTitle"
+                        android:text="@string/like_effect_tool_remove_bg" />
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

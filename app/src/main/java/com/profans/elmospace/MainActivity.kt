@@ -1098,7 +1098,8 @@ class MainActivity : ComponentActivity() {
                     const rect = button.getBoundingClientRect();
                     const multiplier = Math.max(1, Math.min(5, config.sizeMultiplier || 1.5));
                     const duration = Math.max(1000, Math.min(10000, config.durationMs || 2000));
-                    const size = Math.max(1, window.innerWidth * baseSizeRatio * multiplier);
+                    const baseEffectScale = 2.5;
+                    const size = Math.max(1, window.innerWidth * baseSizeRatio * baseEffectScale * multiplier);
                     const startX = rect.left + rect.width / 2 - size / 2;
                     const startY = rect.top - size * 0.9;
                     const endY = window.innerHeight + size * 1.25;
@@ -1214,10 +1215,19 @@ class MainActivity : ComponentActivity() {
             cachedLikeEffectDataUrl = it
             return it
         }
-        val option = LikeEffectAssets.find(effectId)
-        val encoded = resources.openRawResource(option.drawableRes).use { stream ->
-            Base64.encodeToString(stream.readBytes(), Base64.NO_WRAP)
+        val option = LikeEffectAssets.find(this, effectId)
+        val bytes = if (option.type == LikeEffectAssetType.CUSTOM) {
+            val file = LikeEffectCustomAssetRepository.imageFile(this, option.fileName)
+            if (!file.exists()) {
+                resources.openRawResource(LikeEffectAssets.find(this, LikeEffectAssets.DEFAULT_ID).drawableRes)
+                    .use { stream -> stream.readBytes() }
+            } else {
+                file.readBytes()
+            }
+        } else {
+            resources.openRawResource(option.drawableRes).use { stream -> stream.readBytes() }
         }
+        val encoded = Base64.encodeToString(bytes, Base64.NO_WRAP)
         return "data:image/png;base64,$encoded".also {
             cachedLikeEffectId = option.id
             cachedLikeEffectDataUrl = it
@@ -1226,7 +1236,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun getLikeEffectDataUrlsJson(): String {
-        return LikeEffectAssets.options.joinToString(prefix = "[", postfix = "]") { option ->
+        return LikeEffectAssets.options(this).joinToString(prefix = "[", postfix = "]") { option ->
             JSONObject.quote(getLikeEffectDataUrl(option.id))
         }
     }

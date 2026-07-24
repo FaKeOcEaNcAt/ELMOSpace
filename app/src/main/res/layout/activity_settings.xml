@@ -181,6 +181,14 @@
                         android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+                <View android:id="@+id/likeEffectManagerDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectManagerRow" style="@style/ComfortSettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/like_effect_manager" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/like_effect_manager_summary" />
+                    </LinearLayout>
+                    <TextView style="@style/SettingsArrow" />
+                </LinearLayout>
                 <View android:id="@+id/likeEffectDurationDivider" style="@style/SettingsDivider" />
                 <LinearLayout android:id="@+id/likeEffectDurationRow" style="@style/SettingsRow">
                     <TextView style="@style/SettingsRowTitle" android:text="@string/like_effect_duration" />
@@ -202,6 +210,21 @@
                         android:textColor="@color/nav_selected"
                         android:textSize="15sp"
                         android:textStyle="bold" />
+                </LinearLayout>
+                <View android:id="@+id/likeEffectPreviewDivider" style="@style/SettingsDivider" />
+                <LinearLayout android:id="@+id/likeEffectPreviewRow" style="@style/SettingsRow">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/SettingsRowTitle" android:layout_width="match_parent" android:text="@string/test_like_effect" />
+                        <TextView style="@style/SettingsRowSummary" android:text="@string/test_like_effect_summary" />
+                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/likeEffectPreviewButton"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_permission_action"
+                        android:contentDescription="@string/test_like_effect"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_play_arrow" />
                 </LinearLayout>
             </LinearLayout>
 

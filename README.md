@@ -1,5 +1,7 @@
 # 艾莫空间
 
+![Android](https://img.shields.io/badge/Android-WebView-3DDC84?logo=android&logoColor=white) ![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?logo=kotlin&logoColor=white) ![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?logo=openjdk&logoColor=white) ![Gradle](https://img.shields.io/badge/Gradle-Build-02303A?logo=gradle&logoColor=white) ![License](https://img.shields.io/badge/License-Apache%202.0-blue) ![Status](https://img.shields.io/badge/Status-Beta-orange)
+
 艾莫空间是一个面向 `gf2-bbs.exiliumgf.com` 移动端网页的非官方 Android WebView 客户端，用于改善移动端浏览体验。项目目前仍处于测试阶段，功能、界面和兼容性都可能继续调整。
 
 当前版本：`V0.1.16 Build2607212327`
@@ -88,10 +90,40 @@ App 原生层不会主动收集、上传或共享你的个人信息，也不会�
 
 本项目仅用于移动端网页访问体验优化。网页内容、账号服务、社区规则、接口可用性均以官方网站为准。使用本 App 时仍需遵守目标网站的用户协议、社区规则和隐私政策。
 
+## 开源协议
+
+本项目代码采用 [Apache License 2.0](LICENSE) 开源。
+
+除特别说明外，本仓库中由项目作者编写的 Android Activity 界面代码、WebView 壳层代码、本地设置/历史记录/流量统计/定时签到等原生功能代码，以及用于本地体验优化的注入脚本代码，版权归项目作者及后续贡献者所有。
+
+Copyright © 2026 FaKeOcEaNcAt. All Rights Reserved.
+
+需要注意：
+
+- Apache License 2.0 仅适用于本仓库中原创或有权授权的代码与文档。
+- 目标网站的官方网页、官方接口、官方前端脚本、官方图片素材、角色素材、社区内容和用户生成内容不属于本项目开源授权范围。
+- 如果文档或代码中提到官方前端 `app.js`、轮播图 bug、页面结构或接口行为，这些内容仅用于兼容性分析、本地 WebView 适配或问题反馈，不代表本项目拥有官方前端代码版权，也不改变官方代码和素材的权利归属。
+- 项目依赖的 Android、Gradle、Kotlin、Java、GitHub 等第三方工具、平台、库和服务仍分别适用其各自的许可协议、商标规则和使用条款。
+
 ## 商标归属声明
 
 本项目为非官方同人软件，与《少女前线2：追放》、其官方网站、官方社区及其运营方不存在官方隶属、授权或合作关系。
 
-《少女前线2：追放》及相关名称、角色、素材、社区内容等权利归其相应权利人所有。
+《少女前线2：追放》及相关名称、角色、素材、社区内容等权利归上海暗冬网络科技有限公司及其关联权利方、相应权利人所有。
 
 Android 是 Google LLC 的商标。GitHub 是 GitHub, Inc. 的商标。其他商标、服务标志、产品名称和公司名称均归其各自权利人所有。
+
+## 表情包与肖像素材说明
+
+增强点赞交互中使用的表情包素材涉及第三方创作者作品或人物肖像。项目一开始因为没打算开源，所以在版权处理问题上有所欠佳，我在此道歉，联系侵删。
+
+当前素材归属说明如下：
+
+- `Q版热浪回想-M4A1`：版权归 Pixiv 画师“[荒漠大鳄鱼](https://www.pixiv.net/users/21883757)”所有，BiliBili 主页：[荒漠大鳄鱼](https://space.bilibili.com/10855192)。
+- `伟大领袖翀将军`：涉及“[黄翀](https://baike.baidu.com/item/%E7%BE%BD%E4%B8%AD/67741771)”先生的肖像权。
+- `高兴的翀将军`：涉及“[黄翀](https://baike.baidu.com/item/%E7%BE%BD%E4%B8%AD/67741771)”先生的肖像权。
+- `尼沙皇Nikita`：涉及 “[Nikita Buyanov](https://baike.baidu.com/item/%E5%B0%BC%E5%9F%BA%E5%A1%94%C2%B7%E5%B8%83%E4%BA%9A%E8%AF%BA%E5%A4%AB/66980211)” 先生的肖像权，X 账号：[nikgeneburn](https://x.com/nikgeneburn)。
+- `神秘番茄大王`相关两项素材：版权均归 Pixiv 画师“[恶人Zevil](https://www.pixiv.net/users/113431759)”所有，BiliBili 主页：[恶人Zevil](https://space.bilibili.com/291277379)。
+- `可爱的Doro索普`：版权归 Pixiv 画师“[ShinManyNight](https://www.pixiv.net/users/105723917)”所有。
+
+如相关权利人认为本项目使用方式不当，请通过 GitHub Issue 联系处理。

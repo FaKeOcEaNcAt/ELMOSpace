@@ -1,11 +1,19 @@
 package com.profans.elmospace
 
 import androidx.annotation.DrawableRes
+import android.content.Context
+
+enum class LikeEffectAssetType {
+    BUILT_IN,
+    CUSTOM
+}
 
 data class LikeEffectOption(
     val id: String,
     val displayName: String,
-    @param:DrawableRes val drawableRes: Int
+    @param:DrawableRes val drawableRes: Int = 0,
+    val type: LikeEffectAssetType = LikeEffectAssetType.BUILT_IN,
+    val fileName: String = ""
 )
 
 object LikeEffectAssets {
@@ -32,9 +40,13 @@ object LikeEffectAssets {
         LikeEffectOption("doro_sop", "可爱的Doro索普", R.drawable.like_effect_doro_sop)
     )
 
-    val pickerOptions = listOf(randomOption) + options
+    fun options(context: Context) = options + LikeEffectCustomAssetRepository.list(context)
 
-    fun find(id: String) = options.firstOrNull { it.id == id } ?: options.first()
+    fun pickerOptions(context: Context) = listOf(randomOption) + options(context)
 
-    fun findSelection(id: String) = pickerOptions.firstOrNull { it.id == id } ?: options.first()
+    fun find(context: Context, id: String) =
+        options(context).firstOrNull { it.id == id } ?: options.first()
+
+    fun findSelection(context: Context, id: String) =
+        pickerOptions(context).firstOrNull { it.id == id } ?: options.first()
 }
