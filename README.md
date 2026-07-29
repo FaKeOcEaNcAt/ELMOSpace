@@ -32,7 +32,7 @@
 
 当前版本也可以直接下载：
 
-[ElmoSpace-Beta-V0.1.16-Build2607212327.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
+[ElmoSpace-Beta-V0.1.18-Build2607292306.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
 
 如果你没有使用过 GitHub，可以按下面的方式找：
 
