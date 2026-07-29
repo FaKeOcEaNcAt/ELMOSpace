@@ -66,6 +66,17 @@ class ScheduledSignInService : Service() {
                 buildNotification(message, autoCancel = true)
             )
         }
+        if (source == SOURCE_SCHEDULED && result.canRunAutoExchange()) {
+            val exchangeMessage = AutoExchangeExecutor.execute(applicationContext)
+            if (exchangeMessage.isNotBlank()) {
+                runCatching {
+                    getSystemService(NotificationManager::class.java).notify(
+                        NOTIFICATION_EXCHANGE_RESULT_ID,
+                        buildNotification(exchangeMessage, autoCancel = true)
+                    )
+                }
+            }
+        }
         if (source == SOURCE_SCHEDULED) {
             SignInScheduler.scheduleNext(this)
         }
@@ -101,6 +112,16 @@ class ScheduledSignInService : Service() {
             .setAutoCancel(autoCancel)
             .build()
 
+    private fun NativeSignInClient.Result.canRunAutoExchange(): Boolean =
+        when (this) {
+            NativeSignInClient.Result.AlreadySigned,
+            is NativeSignInClient.Result.AlreadySignedWithScore,
+            is NativeSignInClient.Result.SignedWithScore,
+            NativeSignInClient.Result.SignedWithoutScore -> true
+            NativeSignInClient.Result.LoginInvalid,
+            NativeSignInClient.Result.InterfaceUnavailable -> false
+        }
+
     companion object {
         const val ACTION_RUN = "com.profans.elmospace.action.RUN_SCHEDULED_SIGN_IN"
         const val EXTRA_SOURCE = "source"
@@ -109,5 +130,6 @@ class ScheduledSignInService : Service() {
         const val CHANNEL_ID = "scheduled_sign_in"
         private const val NOTIFICATION_RUNNING_ID = 2606191
         private const val NOTIFICATION_RESULT_ID = 2606192
+        private const val NOTIFICATION_EXCHANGE_RESULT_ID = 2606193
     }
 }

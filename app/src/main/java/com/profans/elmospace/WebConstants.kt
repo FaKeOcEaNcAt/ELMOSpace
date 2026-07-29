@@ -11,6 +11,8 @@ object WebConstants {
         "$API_ORIGIN/community/task/get_current_sign_in_status"
     const val SIGN_IN_URL = "$API_ORIGIN/community/task/sign_in"
     const val MEMBER_INFO_URL = "$API_ORIGIN/community/member/info"
+    const val EXCHANGE_LIST_URL = "$API_ORIGIN/community/item/exchange_list"
+    const val EXCHANGE_SUBMIT_URL = "$API_ORIGIN/community/item/exchange"
     const val TOPIC_DETAIL_API_URL = "$API_ORIGIN/community/topic"
     const val JS_BRIDGE_NAME = "AndroidShell"
 

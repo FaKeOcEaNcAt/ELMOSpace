@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/autoExchangeRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/nav_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+
+        <TextView
+            android:id="@+id/autoExchangeBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="@string/back_symbol"
+            android:textColor="@color/error_text"
+            android:textSize="36sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingEnd="44dp"
+            android:text="@string/auto_exchange_resources"
+            android:textColor="@color/error_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                style="@style/SettingsSectionTitle"
+                android:text="@string/auto_exchange_sync_section" />
+
+            <LinearLayout
+                style="@style/SettingsCard"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/autoExchangeScore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/auto_exchange_score_unknown"
+                    android:textColor="@color/error_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/autoExchangeLastSync"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/auto_exchange_never_sync"
+                    android:textColor="@color/nav_unselected"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/autoExchangeSyncButton"
+                    style="@style/PermissionAction"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/auto_exchange_sync_now" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/SettingsSectionTitle"
+                android:layout_marginTop="22dp"
+                android:text="@string/auto_exchange_resource_section" />
+
+            <TextView
+                style="@style/AboutParagraph"
+                android:layout_marginBottom="12dp"
+                android:text="@string/auto_exchange_resource_notice" />
+
+            <LinearLayout
+                android:id="@+id/autoExchangeList"
+                style="@style/SettingsCard" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

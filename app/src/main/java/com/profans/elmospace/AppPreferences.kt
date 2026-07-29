@@ -14,6 +14,11 @@ object AppPreferences {
     private const val KEY_SIGN_AUTH_TOKEN = "sign_auth_token"
     private const val KEY_SCHEDULED_SIGN_IN_AUTO_ENABLED_ONCE =
         "scheduled_sign_in_auto_enabled_once"
+    private const val KEY_AUTO_EXCHANGE_ENABLED = "auto_exchange_enabled"
+    private const val KEY_AUTO_EXCHANGE_SELECTED_IDS = "auto_exchange_selected_ids"
+    private const val KEY_AUTO_EXCHANGE_RESERVE_SCORE = "auto_exchange_reserve_score"
+    private const val KEY_AUTO_EXCHANGE_LAST_SYNC_ITEMS = "auto_exchange_last_sync_items"
+    private const val KEY_AUTO_EXCHANGE_LAST_SYNC_TIME = "auto_exchange_last_sync_time"
     private const val KEY_FEED_PRELOAD = "feed_preload"
     private const val KEY_FEED_PRELOAD_SCREENS = "feed_preload_screens"
     private const val KEY_MOBILE_DATA_WARNING = "mobile_data_warning"
@@ -98,6 +103,49 @@ object AppPreferences {
             .putBoolean(KEY_SCHEDULED_SIGN_IN_AUTO_ENABLED_ONCE, true)
             .apply()
     }
+
+    fun isAutoExchangeEnabled(context: Context) =
+        preferences(context).getBoolean(KEY_AUTO_EXCHANGE_ENABLED, false)
+
+    fun setAutoExchangeEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit()
+            .putBoolean(KEY_AUTO_EXCHANGE_ENABLED, enabled)
+            .apply()
+    }
+
+    fun getAutoExchangeSelectedIds(context: Context): List<Int> =
+        preferences(context).getString(KEY_AUTO_EXCHANGE_SELECTED_IDS, null)
+            ?.split(",")
+            ?.mapNotNull { it.toIntOrNull() }
+            .orEmpty()
+
+    fun setAutoExchangeSelectedIds(context: Context, ids: List<Int>) {
+        preferences(context).edit()
+            .putString(KEY_AUTO_EXCHANGE_SELECTED_IDS, ids.distinct().joinToString(","))
+            .apply()
+    }
+
+    fun getAutoExchangeReserveScore(context: Context) =
+        preferences(context).getInt(KEY_AUTO_EXCHANGE_RESERVE_SCORE, 0).coerceIn(0, 99_999)
+
+    fun setAutoExchangeReserveScore(context: Context, score: Int) {
+        preferences(context).edit()
+            .putInt(KEY_AUTO_EXCHANGE_RESERVE_SCORE, score.coerceIn(0, 99_999))
+            .apply()
+    }
+
+    fun getAutoExchangeLastSyncItems(context: Context) =
+        preferences(context).getString(KEY_AUTO_EXCHANGE_LAST_SYNC_ITEMS, null).orEmpty()
+
+    fun setAutoExchangeLastSyncItems(context: Context, itemsJson: String) {
+        preferences(context).edit()
+            .putString(KEY_AUTO_EXCHANGE_LAST_SYNC_ITEMS, itemsJson)
+            .putLong(KEY_AUTO_EXCHANGE_LAST_SYNC_TIME, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun getAutoExchangeLastSyncTime(context: Context) =
+        preferences(context).getLong(KEY_AUTO_EXCHANGE_LAST_SYNC_TIME, 0L)
 
     fun isFeedPreloadEnabled(context: Context) =
         preferences(context).getBoolean(KEY_FEED_PRELOAD, true)

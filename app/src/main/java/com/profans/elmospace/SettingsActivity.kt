@@ -27,6 +27,8 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
+import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -43,10 +45,26 @@ import androidx.core.view.WindowInsetsCompat
 import java.util.Locale
 
 class SettingsActivity : ComponentActivity() {
+    private lateinit var settingsTitle: TextView
+    private lateinit var settingsContent: LinearLayout
+    private lateinit var settingsContentScroll: ScrollView
+    private val settingsPages = mutableMapOf<SettingsPage, View>()
+    private var currentSettingsPage = SettingsPage.CATEGORIES
+    private var settingsPageTransitionRunning = false
     private lateinit var scheduledSwitch: Switch
     private lateinit var timeRow: LinearLayout
     private lateinit var timeValue: TextView
+    private lateinit var autoExchangeRow: LinearLayout
+    private lateinit var autoExchangeSwitch: Switch
+    private lateinit var autoExchangeDivider: View
+    private lateinit var autoExchangeResourceRow: LinearLayout
+    private lateinit var autoExchangeResourceDivider: View
+    private lateinit var autoExchangeReserveRow: LinearLayout
+    private lateinit var autoExchangeReserveDivider: View
+    private lateinit var autoExchangeReserveValue: TextView
     private lateinit var cacheSizeValue: TextView
+    private lateinit var storageSpaceValue: TextView
+    private lateinit var storageSpaceProgress: ProgressBar
     private lateinit var preloadScreensRow: LinearLayout
     private lateinit var preloadScreensValue: TextView
     private lateinit var darkModeValue: TextView
@@ -102,10 +120,25 @@ class SettingsActivity : ComponentActivity() {
         setContentView(R.layout.activity_settings)
         applyInsets()
 
+        settingsTitle = findViewById(R.id.settingsTitle)
+        settingsContent = findViewById(R.id.settingsContent)
+        settingsContentScroll = findViewById(R.id.settingsContentScroll)
+        initializeSettingsPages()
+
         scheduledSwitch = findViewById(R.id.scheduledSignSwitch)
         timeRow = findViewById(R.id.timeRow)
         timeValue = findViewById(R.id.timeValue)
+        autoExchangeRow = findViewById(R.id.autoExchangeRow)
+        autoExchangeSwitch = findViewById(R.id.autoExchangeSwitch)
+        autoExchangeDivider = findViewById(R.id.autoExchangeDivider)
+        autoExchangeResourceRow = findViewById(R.id.autoExchangeResourceRow)
+        autoExchangeResourceDivider = findViewById(R.id.autoExchangeResourceDivider)
+        autoExchangeReserveRow = findViewById(R.id.autoExchangeReserveRow)
+        autoExchangeReserveDivider = findViewById(R.id.autoExchangeReserveDivider)
+        autoExchangeReserveValue = findViewById(R.id.autoExchangeReserveValue)
         cacheSizeValue = findViewById(R.id.cacheSizeValue)
+        storageSpaceValue = findViewById(R.id.storageSpaceValue)
+        storageSpaceProgress = findViewById(R.id.storageSpaceProgress)
         preloadScreensRow = findViewById(R.id.preloadScreensRow)
         preloadScreensValue = findViewById(R.id.preloadScreensValue)
         darkModeValue = findViewById(R.id.darkModeValue)
@@ -130,15 +163,28 @@ class SettingsActivity : ComponentActivity() {
         cameraPermissionStatus = findViewById(R.id.cameraPermissionStatus)
         locationPermissionStatus = findViewById(R.id.locationPermissionStatus)
 
-        findViewById<View>(R.id.settingsBack).setOnClickListener { finishWithTransition() }
+        findViewById<View>(R.id.settingsBack).setOnClickListener { handleSettingsBack() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = finishWithTransition()
+            override fun handleOnBackPressed() = handleSettingsBack()
         })
 
+        bindSettingsCategoryNavigation()
         findViewById<View>(R.id.privacyRow).setOnClickListener { openOfficialPath("/m/priSet") }
         findViewById<View>(R.id.feedbackRow).setOnClickListener { openOfficialPath("/m/feedback") }
         findViewById<View>(R.id.logoutRow).setOnClickListener {
             openOfficialPath("/m/set", allowOfficialSettings = true)
+        }
+        findViewById<View>(R.id.aboutGithubRepoRow).setOnClickListener {
+            openExternalUrl(ELMOSPACE_GITHUB_REPO_URL)
+        }
+        findViewById<View>(R.id.aboutGithubReleasesRow).setOnClickListener {
+            openExternalUrl(ELMOSPACE_GITHUB_RELEASES_URL)
+        }
+        findViewById<View>(R.id.aboutGithubIssuesRow).setOnClickListener {
+            openExternalUrl(ELMOSPACE_GITHUB_ISSUES_URL)
+        }
+        findViewById<View>(R.id.aboutAuthorBilibiliRow).setOnClickListener {
+            openExternalUrl(AUTHOR_BILIBILI_URL)
         }
 
         val deviceSecurityCheckSwitch = findViewById<Switch>(R.id.deviceSecurityCheckSwitch)
@@ -173,6 +219,7 @@ class SettingsActivity : ComponentActivity() {
         scheduledSwitch.setOnCheckedChangeListener { _, checked ->
             AppPreferences.setScheduledSignInEnabled(this, checked)
             updateTimeEnabledState()
+            updateAutoExchangeVisibility()
             if (checked) {
                 if (!SignInScheduler.scheduleNext(this)) {
                     showExactAlarmPermissionDialogIfNeeded()
@@ -187,6 +234,16 @@ class SettingsActivity : ComponentActivity() {
         }
 
         timeRow.setOnClickListener { showTimePicker() }
+        autoExchangeSwitch.isChecked = AppPreferences.isAutoExchangeEnabled(this)
+        autoExchangeSwitch.setOnCheckedChangeListener { _, checked ->
+            AppPreferences.setAutoExchangeEnabled(this, checked)
+            updateAutoExchangeVisibility()
+        }
+        autoExchangeRow.setOnClickListener {
+            autoExchangeSwitch.isChecked = !autoExchangeSwitch.isChecked
+        }
+        autoExchangeResourceRow.setOnClickListener { openAutoExchangeResources() }
+        autoExchangeReserveRow.setOnClickListener { showAutoExchangeReservePicker() }
         findViewById<View>(R.id.testScheduledSignRow).setOnClickListener {
             testScheduledSignIn()
         }
@@ -266,6 +323,8 @@ class SettingsActivity : ComponentActivity() {
         findViewById<View>(R.id.clearCacheRow).setOnClickListener { clearWebCache() }
         updateDisplayedTime()
         updateTimeEnabledState()
+        updateAutoExchangeReserveValue()
+        updateAutoExchangeVisibility()
         updateDisplayedPreloadScreens()
         updatePreloadEnabledState(preloadSwitch.isChecked)
         updateDarkModeValue()
@@ -275,6 +334,17 @@ class SettingsActivity : ComponentActivity() {
         updateLikeEffectVisibility(enhancedLikeSwitch.isChecked)
         updatePermissionStatuses()
         updateCacheSize()
+        updateStorageSpace()
+        val restoredPage = savedInstanceState
+            ?.getString(KEY_SETTINGS_PAGE)
+            ?.let { runCatching { SettingsPage.valueOf(it) }.getOrNull() }
+            ?: SettingsPage.CATEGORIES
+        showSettingsPageImmediately(restoredPage)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(KEY_SETTINGS_PAGE, currentSettingsPage.name)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
@@ -284,11 +354,20 @@ class SettingsActivity : ComponentActivity() {
         }
         updatePermissionStatuses()
         updateLikeEffectValue()
+        if (::autoExchangeSwitch.isInitialized) {
+            autoExchangeSwitch.isChecked = AppPreferences.isAutoExchangeEnabled(this)
+            updateAutoExchangeReserveValue()
+            updateAutoExchangeVisibility()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         stopLikeEffectPreview()
+        settingsContent.animate().cancel()
+        settingsContent.translationX = 0f
+        settingsContent.alpha = 1f
+        settingsPageTransitionRunning = false
     }
 
     private fun applyInsets() {
@@ -298,6 +377,108 @@ class SettingsActivity : ComponentActivity() {
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
+    }
+
+    private fun initializeSettingsPages() {
+        SettingsPage.values().forEach { page ->
+            settingsPages[page] = findViewById(page.viewId)
+        }
+    }
+
+    private fun bindSettingsCategoryNavigation() {
+        findViewById<View>(R.id.officialSettingsCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.OFFICIAL)
+        }
+        findViewById<View>(R.id.securityCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.SECURITY)
+        }
+        findViewById<View>(R.id.signCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.SIGN)
+        }
+        findViewById<View>(R.id.displayCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.DISPLAY)
+        }
+        findViewById<View>(R.id.interactionCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.INTERACTION)
+        }
+        findViewById<View>(R.id.networkCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.NETWORK)
+        }
+        findViewById<View>(R.id.permissionCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.PERMISSION)
+        }
+        findViewById<View>(R.id.powerCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.POWER)
+        }
+        findViewById<View>(R.id.storageCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.STORAGE)
+        }
+        findViewById<View>(R.id.aboutCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.ABOUT)
+        }
+        findViewById<View>(R.id.versionCategoryRow).setOnClickListener {
+            showSettingsPage(SettingsPage.VERSION)
+        }
+    }
+
+    private fun handleSettingsBack() {
+        if (settingsPageTransitionRunning) return
+        if (currentSettingsPage == SettingsPage.CATEGORIES) {
+            finishWithTransition()
+        } else {
+            showSettingsPage(SettingsPage.CATEGORIES, forward = false)
+        }
+    }
+
+    private fun showSettingsPage(page: SettingsPage, forward: Boolean = true) {
+        if (settingsPageTransitionRunning || page == currentSettingsPage) return
+        settingsPageTransitionRunning = true
+        if (currentSettingsPage == SettingsPage.INTERACTION && page != SettingsPage.INTERACTION) {
+            stopLikeEffectPreview()
+        }
+
+        val distance = (settingsContent.width.takeIf { it > 0 }
+            ?: resources.displayMetrics.widthPixels) * SETTINGS_PAGE_TRANSLATION_RATIO
+        val outX = if (forward) -distance else distance
+        val inX = if (forward) distance else -distance
+
+        settingsContent.animate()
+            .translationX(outX)
+            .alpha(SETTINGS_PAGE_FADED_ALPHA)
+            .setDuration(SETTINGS_PAGE_OUT_DURATION_MS)
+            .setInterpolator(LinearInterpolator())
+            .withEndAction {
+                showSettingsPageImmediately(page, resetTransition = false)
+                settingsContent.translationX = inX
+                settingsContent.alpha = SETTINGS_PAGE_FADED_ALPHA
+                settingsContent.animate()
+                    .translationX(0f)
+                    .alpha(1f)
+                    .setDuration(SETTINGS_PAGE_IN_DURATION_MS)
+                    .setInterpolator(LinearInterpolator())
+                    .withEndAction {
+                        settingsPageTransitionRunning = false
+                    }
+                    .start()
+            }
+            .start()
+    }
+
+    private fun showSettingsPageImmediately(page: SettingsPage, resetTransition: Boolean = true) {
+        if (resetTransition) {
+            settingsContent.animate().cancel()
+            settingsPageTransitionRunning = false
+        }
+        currentSettingsPage = page
+        settingsTitle.setText(page.titleRes)
+        settingsPages.forEach { (settingsPage, view) ->
+            view.visibility = if (settingsPage == page) View.VISIBLE else View.GONE
+            view.translationX = 0f
+            view.alpha = 1f
+        }
+        settingsContent.translationX = 0f
+        settingsContent.alpha = 1f
+        settingsContentScroll.post { settingsContentScroll.scrollTo(0, 0) }
     }
 
     private fun showTimePicker() {
@@ -329,6 +510,43 @@ class SettingsActivity : ComponentActivity() {
     private fun updateTimeEnabledState() {
         timeRow.isEnabled = scheduledSwitch.isChecked
         timeRow.alpha = if (scheduledSwitch.isChecked) 1f else 0.45f
+    }
+
+    private fun updateAutoExchangeVisibility() {
+        val scheduledEnabled = scheduledSwitch.isChecked
+        val exchangeEnabled = scheduledEnabled && autoExchangeSwitch.isChecked
+        autoExchangeDivider.visibility = if (scheduledEnabled) View.VISIBLE else View.GONE
+        autoExchangeRow.visibility = if (scheduledEnabled) View.VISIBLE else View.GONE
+        autoExchangeResourceDivider.visibility = if (exchangeEnabled) View.VISIBLE else View.GONE
+        autoExchangeResourceRow.visibility = if (exchangeEnabled) View.VISIBLE else View.GONE
+        autoExchangeReserveDivider.visibility = if (exchangeEnabled) View.VISIBLE else View.GONE
+        autoExchangeReserveRow.visibility = if (exchangeEnabled) View.VISIBLE else View.GONE
+    }
+
+    private fun showAutoExchangeReservePicker() {
+        val values = (0..20).map { it * 10 }
+        val labels = values.map {
+            getString(R.string.auto_exchange_reserve_score_value, it)
+        }.toTypedArray()
+        val selectedIndex = values.indexOf(AppPreferences.getAutoExchangeReserveScore(this))
+            .takeIf { it >= 0 } ?: 0
+        showModernNumberPicker(
+            titleRes = R.string.auto_exchange_reserve_score,
+            minValue = 0,
+            maxValue = labels.lastIndex,
+            selectedValue = selectedIndex,
+            displayedValues = labels
+        ) { index ->
+            AppPreferences.setAutoExchangeReserveScore(this, values[index])
+            updateAutoExchangeReserveValue()
+        }
+    }
+
+    private fun updateAutoExchangeReserveValue() {
+        autoExchangeReserveValue.text = getString(
+            R.string.auto_exchange_reserve_score_value,
+            AppPreferences.getAutoExchangeReserveScore(this)
+        )
     }
 
     private fun testScheduledSignIn() {
@@ -731,6 +949,24 @@ class SettingsActivity : ComponentActivity() {
         }.start()
     }
 
+    private fun updateStorageSpace() {
+        storageSpaceValue.text = getString(R.string.storage_space_calculating)
+        storageSpaceProgress.progress = 0
+        Thread {
+            val storageSpace = runCatching { DeviceStorageUtils.internalStorageSpace() }.getOrNull()
+            runOnUiThread {
+                if (!isFinishing && !isDestroyed && storageSpace != null) {
+                    storageSpaceProgress.progress = storageSpace.usedPercent
+                    storageSpaceValue.text = getString(
+                        R.string.storage_space_available_format,
+                        WebCacheUtils.formatSize(storageSpace.availableBytes),
+                        WebCacheUtils.formatSize(storageSpace.totalBytes)
+                    )
+                }
+            }
+        }.start()
+    }
+
     private fun clearWebCache() {
         val cacheRow = findViewById<View>(R.id.clearCacheRow)
         cacheRow.isEnabled = false
@@ -747,6 +983,7 @@ class SettingsActivity : ComponentActivity() {
             runOnUiThread {
                 if (!isFinishing && !isDestroyed) {
                     cacheSizeValue.text = WebCacheUtils.formatSize(size)
+                    updateStorageSpace()
                     cacheRow.isEnabled = true
                     Toast.makeText(this, R.string.cache_cleared, Toast.LENGTH_SHORT).show()
                 }
@@ -907,16 +1144,57 @@ class SettingsActivity : ComponentActivity() {
         startActivity(Intent(this, LikeEffectManagerActivity::class.java), options.toBundle())
     }
 
+    private fun openAutoExchangeResources() {
+        val options = ActivityOptions.makeCustomAnimation(
+            this,
+            R.anim.settings_enter,
+            R.anim.activity_hold
+        )
+        startActivity(Intent(this, AutoExchangeActivity::class.java), options.toBundle())
+    }
+
+    private fun openExternalUrl(url: String) {
+        runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }.onFailure {
+            Toast.makeText(this, R.string.cannot_open_link, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     @Suppress("DEPRECATION")
     private fun finishWithTransition() {
         finish()
         overridePendingTransition(R.anim.activity_hold, R.anim.settings_exit)
     }
 
+    private enum class SettingsPage(@StringRes val titleRes: Int, val viewId: Int) {
+        CATEGORIES(R.string.settings_title, R.id.settingsCategoryPage),
+        OFFICIAL(R.string.settings_official_section, R.id.officialSettingsPage),
+        SECURITY(R.string.settings_security_section, R.id.securitySettingsPage),
+        SIGN(R.string.settings_app_section, R.id.signSettingsPage),
+        DISPLAY(R.string.settings_display_section, R.id.displaySettingsPage),
+        INTERACTION(R.string.settings_interaction_section, R.id.interactionSettingsPage),
+        NETWORK(R.string.settings_preload_section, R.id.networkSettingsPage),
+        PERMISSION(R.string.settings_permission_section, R.id.permissionSettingsPage),
+        POWER(R.string.settings_power_section, R.id.powerSettingsPage),
+        STORAGE(R.string.settings_storage_section, R.id.storageSettingsPage),
+        ABOUT(R.string.about_title, R.id.aboutSettingsPage),
+        VERSION(R.string.version_history_section, R.id.versionSettingsPage)
+    }
+
     private companion object {
+        private const val KEY_SETTINGS_PAGE = "settings_page"
+        private const val SETTINGS_PAGE_TRANSLATION_RATIO = 0.04f
+        private const val SETTINGS_PAGE_FADED_ALPHA = 0.72f
+        private const val SETTINGS_PAGE_OUT_DURATION_MS = 90L
+        private const val SETTINGS_PAGE_IN_DURATION_MS = 150L
         private const val LIKE_EFFECT_PREVIEW_INTERVAL_MS = 1000L
         private const val LIKE_EFFECT_BASE_SCALE = 2.5f
         private const val LIKE_EFFECT_DETAIL_SIZE_RATIO = 0.0533333333f
         private const val LIKE_EFFECT_PREVIEW_SIZE_CALIBRATION = 0.75f
+        private const val ELMOSPACE_GITHUB_REPO_URL = "https://github.com/FaKeOcEaNcAt/ELMOSpace"
+        private const val ELMOSPACE_GITHUB_RELEASES_URL = "https://github.com/FaKeOcEaNcAt/ELMOSpace/releases"
+        private const val ELMOSPACE_GITHUB_ISSUES_URL = "https://github.com/FaKeOcEaNcAt/ELMOSpace/issues"
+        private const val AUTHOR_BILIBILI_URL = "https://space.bilibili.com/323603999"
     }
 }
