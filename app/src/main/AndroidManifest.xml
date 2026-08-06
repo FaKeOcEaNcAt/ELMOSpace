@@ -35,16 +35,21 @@
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.艾莫号停车场">
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:launchMode="singleTop"
-            android:theme="@style/Theme.艾莫号停车场">
+            android:theme="@style/Theme.ElmoSplash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.艾莫号停车场" />
 
         <activity
             android:name=".SettingsActivity"

@@ -23,6 +23,9 @@ object AppPreferences {
     private const val KEY_FEED_PRELOAD_SCREENS = "feed_preload_screens"
     private const val KEY_MOBILE_DATA_WARNING = "mobile_data_warning"
     private const val KEY_DARK_MODE = "dark_mode"
+    private const val KEY_SPLASH_ANIMATION = "splash_animation"
+    private const val KEY_ACCENT_COLOR_MODE = "accent_color_mode"
+    private const val KEY_ACCENT_COLOR = "accent_color"
     private const val KEY_ENHANCED_LIKE_INTERACTION = "enhanced_like_interaction"
     private const val KEY_LIKE_EFFECT = "like_effect"
     private const val KEY_LIKE_EFFECT_DURATION_SECONDS = "like_effect_duration_seconds"
@@ -33,6 +36,11 @@ object AppPreferences {
     const val DARK_MODE_FOLLOW_SYSTEM = 0
     const val DARK_MODE_OFF = 1
     const val DARK_MODE_ON = 2
+
+    const val ACCENT_COLOR_DEFAULT = 0
+    const val ACCENT_COLOR_WHEEL = 1
+    const val ACCENT_COLOR_HEX = 2
+    const val ACCENT_COLOR_RGB = 3
 
     private fun preferences(context: Context) =
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -177,6 +185,36 @@ object AppPreferences {
     fun setDarkMode(context: Context, mode: Int) {
         preferences(context).edit()
             .putInt(KEY_DARK_MODE, mode.coerceIn(DARK_MODE_FOLLOW_SYSTEM, DARK_MODE_ON))
+            .apply()
+    }
+
+    fun isSplashAnimationEnabled(context: Context) =
+        preferences(context).getBoolean(KEY_SPLASH_ANIMATION, true)
+
+    fun setSplashAnimationEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit()
+            .putBoolean(KEY_SPLASH_ANIMATION, enabled)
+            .apply()
+    }
+
+    fun getAccentColorMode(context: Context) =
+        preferences(context).getInt(KEY_ACCENT_COLOR_MODE, ACCENT_COLOR_DEFAULT)
+            .coerceIn(ACCENT_COLOR_DEFAULT, ACCENT_COLOR_RGB)
+
+    fun getAccentColor(context: Context) =
+        preferences(context).getInt(KEY_ACCENT_COLOR, AppAccentColor.DEFAULT_COLOR)
+
+    fun setDefaultAccentColor(context: Context) {
+        preferences(context).edit()
+            .putInt(KEY_ACCENT_COLOR_MODE, ACCENT_COLOR_DEFAULT)
+            .putInt(KEY_ACCENT_COLOR, AppAccentColor.DEFAULT_COLOR)
+            .apply()
+    }
+
+    fun setCustomAccentColor(context: Context, mode: Int, color: Int) {
+        preferences(context).edit()
+            .putInt(KEY_ACCENT_COLOR_MODE, mode.coerceIn(ACCENT_COLOR_WHEEL, ACCENT_COLOR_RGB))
+            .putInt(KEY_ACCENT_COLOR, AppAccentColor.normalizeColor(color))
             .apply()
     }
 

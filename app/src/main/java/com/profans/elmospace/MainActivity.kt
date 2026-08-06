@@ -8,6 +8,7 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -34,6 +35,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -134,6 +136,7 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
 
         bindViews()
+        applyAccentColor()
         applySystemBarInsets()
         configureWebView()
         configureBottomNavigation()
@@ -219,6 +222,7 @@ class MainActivity : ComponentActivity() {
         openingNativeSettings = false
         openingBrowsingHistory = false
         if (::webView.isInitialized) {
+            applyAccentColor()
             injectDarkModeStyles(webView.url)
             injectEnhancedLikeInteraction(webView.url)
             if (isRootUrl(webView.url)) {
@@ -372,8 +376,24 @@ class MainActivity : ComponentActivity() {
         navItems.forEachIndexed { index, item -> setSelectedRecursively(item, index == tab) }
     }
 
+    private fun applyAccentColor() {
+        progressBar.progressTintList = ColorStateList.valueOf(AppAccentColor.color(this))
+        if (::navItems.isInitialized) {
+            selectNativeTab(selectedTab)
+        }
+    }
+
     private fun setSelectedRecursively(view: View, selected: Boolean) {
         view.isSelected = selected
+        val tintColor = if (selected) {
+            AppAccentColor.color(this)
+        } else {
+            ContextCompat.getColor(this, R.color.nav_unselected)
+        }
+        when (view) {
+            is TextView -> view.setTextColor(tintColor)
+            is ImageView -> view.imageTintList = ColorStateList.valueOf(tintColor)
+        }
         if (view is android.view.ViewGroup) {
             for (index in 0 until view.childCount) {
                 setSelectedRecursively(view.getChildAt(index), selected)
@@ -410,6 +430,7 @@ class MainActivity : ComponentActivity() {
             injectImagePreviewObserver()
             injectDarkModeStyles(url)
             injectEnhancedLikeInteraction(url)
+            injectThreadShareInterceptor(url)
             injectBrowsingHistoryCollector(url)
             syncSignAuthToken()
             finishOfficialFeatureTransitionIfNeeded(url)
@@ -435,6 +456,7 @@ class MainActivity : ComponentActivity() {
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
             injectDarkModeStyles(url)
             injectEnhancedLikeInteraction(url)
+            injectThreadShareInterceptor(url)
             injectBrowsingHistoryCollector(url)
             markOfficialFeatureReached(url)
             if (shouldReturnToNativeSettings(url)) {
@@ -1205,6 +1227,106 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun injectThreadShareInterceptor(url: String?) {
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
+        if (!isThreadInfoUri(uri)) return
+
+        val bridgeName = JSONObject.quote(JS_BRIDGE_NAME)
+        webView.evaluateJavascript(
+            """
+            (function() {
+                const bridgeName = $bridgeName;
+                const getBridge = function() {
+                    return window[bridgeName];
+                };
+                if (window.__androidThreadShareInstalled) return true;
+                window.__androidThreadShareInstalled = true;
+
+                const textOf = function(node) {
+                    return ((node && node.textContent) || '').replace(/\s+/g, ' ').trim();
+                };
+
+                const findDetailPostModel = function(element) {
+                    let node = element;
+                    const visited = [];
+                    while (node) {
+                        let vm = node.__vue__;
+                        let depth = 0;
+                        while (vm && depth < 10) {
+                            if (visited.indexOf(vm) >= 0) break;
+                            visited.push(vm);
+                            const data = vm.${'$'}data || vm;
+                            if (data && data.obj && data.obj.topic_id) return data.obj;
+                            if (vm.obj && vm.obj.topic_id) return vm.obj;
+                            vm = vm.${'$'}parent;
+                            depth++;
+                        }
+                        node = node.parentElement;
+                    }
+                    return null;
+                };
+
+                const readFallback = function(postBox) {
+                    const card = postBox && postBox.closest('.content');
+                    const titleNode = card && card.querySelector('.card_m1 > p, .card_tit p');
+                    const authorNode = card && card.querySelector('.card_t .card_tm > div');
+                    const authorCopy = authorNode ? authorNode.cloneNode(true) : null;
+                    if (authorCopy) {
+                        authorCopy.querySelectorAll('span, img').forEach(function(node) {
+                            node.remove();
+                        });
+                    }
+                    return {
+                        title: textOf(titleNode),
+                        author: textOf(authorCopy)
+                    };
+                };
+
+                const canonicalShareUrl = function() {
+                    try {
+                        return window.location.origin + '/threadInfo' + window.location.search;
+                    } catch (_) {
+                        return window.location.href;
+                    }
+                };
+
+                document.addEventListener('click', function(event) {
+                    if (!/\/m\/threadInfo\/?$/.test(window.location.pathname)) return;
+                    const target = event.target;
+                    if (!target || !target.closest) return;
+                    const postBox = target.closest('.post_box');
+                    if (!postBox) return;
+                    const targetImage = target.closest('img');
+                    if (!targetImage || !postBox.contains(targetImage)) return;
+
+                    const directImages = Array.from(postBox.children).filter(function(node) {
+                        return node && node.tagName === 'IMG';
+                    });
+                    if (!directImages.length || targetImage !== directImages[directImages.length - 1]) {
+                        return;
+                    }
+
+                    const bridge = getBridge();
+                    if (!bridge || !bridge.shareThreadInfo) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    const model = findDetailPostModel(postBox) || {};
+                    const fallback = readFallback(postBox);
+                    bridge.shareThreadInfo(
+                        String(model.title || fallback.title || document.title || ''),
+                        String(model.user_nick_name || fallback.author || ''),
+                        canonicalShareUrl()
+                    );
+                }, true);
+                return true;
+            })();
+            """.trimIndent(),
+            null
+        )
+    }
+
     @SuppressLint("ResourceType")
     private fun getLikeEffectDataUrl(effectId: String): String {
         if (cachedLikeEffectId == effectId && cachedLikeEffectDataUrl != null) {
@@ -1245,6 +1367,8 @@ class MainActivity : ComponentActivity() {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         if (!isInternalMobileUri(uri)) return
         val darkEnabled = AppTheme.isDarkMode(applicationContext)
+        val accentHex = AppAccentColor.hex(this)
+        val accentRgb = AppAccentColor.rgbCss(this)
         webView.evaluateJavascript(
             """
             (function() {
@@ -1348,9 +1472,9 @@ class MainActivity : ComponentActivity() {
                     }
                     #div11 + .btns > .theme_item > .sear_themesbox > ul > li[style*="color"],
                     #div1 + .btns > .theme_item > .sear_themesbox > ul > li[style*="color"] {
-                        color: #f26c1c !important;
+                        color: $accentHex !important;
                     }
-                    body a { color: #ff9279 !important; }
+                    body a { color: $accentHex !important; }
                     .conditions1, .conditions1 p, .conditons_right,
                     .tab_box .van-tab, .tab_box .van-tab__text,
                     .the_box .van-button, .the_box .van-button__text,
@@ -1366,7 +1490,7 @@ class MainActivity : ComponentActivity() {
                         color: #c6c3be !important;
                     }
                     .tab_box .van-tab--active, .tab_box .van-tab--active .van-tab__text {
-                        color: #ff765f !important;
+                        color: $accentHex !important;
                     }
                     .conditions1 p, .conditions1 .conditons_right {
                         color: #f3f1ed !important;
@@ -1394,7 +1518,7 @@ class MainActivity : ComponentActivity() {
                     }
                     .card_t .van-button {
                         background-color: #1a1d20 !important;
-                        border-color: #ff765f !important;
+                        border-color: $accentHex !important;
                         color: #f3f1ed !important;
                     }
                     .van-image__loading, .van-image__error,
@@ -1412,7 +1536,7 @@ class MainActivity : ComponentActivity() {
                     }
                     .list_wrap .van-button {
                         background-color: #1a1d20 !important;
-                        border-color: #ff765f !important;
+                        border-color: $accentHex !important;
                         color: #f3f1ed !important;
                     }
                     .list_wrap .van-button.flowed {
@@ -1493,7 +1617,7 @@ class MainActivity : ComponentActivity() {
                     }
                     .index_news .van-tab--active,
                     .index_news .van-tab--active .van-tab__text {
-                        color: #ff765f !important;
+                        color: $accentHex !important;
                     }
                     .index_news [class*="time"],
                     .index_news [class*="status"],
@@ -1549,8 +1673,8 @@ class MainActivity : ComponentActivity() {
                     .types .type.ac,
                     .content .type.ac,
                     .content .van-button--primary {
-                        background-color: #f26c1c !important;
-                        border-color: #f26c1c !important;
+                        background-color: $accentHex !important;
+                        border-color: $accentHex !important;
                         color: #ffffff !important;
                     }
                     .box .img_box .image_icon,
@@ -1580,9 +1704,9 @@ class MainActivity : ComponentActivity() {
                     .post_box > .van-button,
                     .content > .van-button,
                     .box + .van-button {
-                        background-color: #f26c1c !important;
+                        background-color: $accentHex !important;
                         background-image: none !important;
-                        border-color: #f26c1c !important;
+                        border-color: $accentHex !important;
                         color: #ffffff !important;
                         box-shadow: none !important;
                     }
@@ -1647,8 +1771,8 @@ class MainActivity : ComponentActivity() {
                         white-space: nowrap !important;
                     }
                     .data_main .data_item_head > div[data-html2canvas-ignore].ac {
-                        background-color: #f26c1c !important;
-                        border-color: #f26c1c !important;
+                        background-color: $accentHex !important;
+                        border-color: $accentHex !important;
                     }
                     .data_main .data_item_head > div[data-html2canvas-ignore].ac::before {
                         content: "公开中" !important;
@@ -1762,8 +1886,8 @@ class MainActivity : ComponentActivity() {
                         flex: 0 0 auto !important;
                     }
                     .strage_item .van-tab--active {
-                        background-color: #f26c1c !important;
-                        border-color: #f26c1c !important;
+                        background-color: $accentHex !important;
+                        border-color: $accentHex !important;
                         color: #ffffff !important;
                     }
                     .strage_item .van-tab *,
@@ -1816,13 +1940,13 @@ class MainActivity : ComponentActivity() {
                     }
                     .user_item input::selection,
                     .user_box input::selection {
-                        background-color: rgba(242,108,28,.35) !important;
+                        background-color: rgba($accentRgb,.35) !important;
                     }
                     .user_box > .van-button,
                     .head_box > .van-button {
-                        background-color: #f26c1c !important;
+                        background-color: $accentHex !important;
                         background-image: none !important;
-                        border-color: #f26c1c !important;
+                        border-color: $accentHex !important;
                         color: #ffffff !important;
                         box-shadow: none !important;
                     }
@@ -1859,7 +1983,7 @@ class MainActivity : ComponentActivity() {
                         color: #c6c3be !important;
                     }
                     .tab_box > span.ac {
-                        color: #ff765f !important;
+                        color: $accentHex !important;
                     }
                     .card_item .img_box img, .card_item [class*="image-grid"] img,
                     .card_item [class*="img-grid"] img {
@@ -1970,6 +2094,44 @@ class MainActivity : ComponentActivity() {
                         "$HOME_URL_PREFIX/threadInfo?id=$topicId&hash_flag=1",
                         isLiked = true
                     )
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun shareThreadInfo(titleValue: String, authorValue: String, urlValue: String) {
+            runOnUiThread {
+                val uri = runCatching { Uri.parse(urlValue) }.getOrNull()
+                    ?: return@runOnUiThread
+                val isThreadUrl = uri.host == TARGET_HOST &&
+                    (uri.path == "/threadInfo" ||
+                        uri.path == "/threadInfo/" ||
+                        uri.path == "/m/threadInfo" ||
+                        uri.path == "/m/threadInfo/")
+                if (!isThreadUrl) return@runOnUiThread
+
+                val title = HistoryTopicFetcher.sanitizeText(titleValue, 160)
+                    .ifBlank { getString(R.string.app_name) }
+                val author = HistoryTopicFetcher.sanitizeText(authorValue, 80)
+                    .ifBlank { getString(R.string.app_name) }
+                val shareText = getString(R.string.share_topic_text, author, title, uri.toString())
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                    putExtra(Intent.EXTRA_TITLE, title)
+                }
+                val chooser = Intent.createChooser(
+                    sendIntent,
+                    getString(R.string.share_topic_chooser_title)
+                )
+                try {
+                    startActivity(chooser)
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        R.string.cannot_open_link,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -2431,5 +2593,4 @@ class MainActivity : ComponentActivity() {
         private const val MAX_SIGN_AUTH_TOKEN_LENGTH = 8_192
         private const val STATE_SELECTED_TAB = "selected_tab"
     }
-
 }

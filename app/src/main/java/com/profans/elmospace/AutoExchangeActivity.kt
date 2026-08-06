@@ -158,6 +158,7 @@ class AutoExchangeActivity : ComponentActivity() {
         })
         titleRow.addView(Switch(this).apply {
             isChecked = selected
+            AppAccentColor.tintSwitch(this, this@AutoExchangeActivity)
             setOnCheckedChangeListener { button, checked ->
                 if (checked && item.cycle in setOf("month", "life")) {
                     button.isChecked = false
@@ -195,7 +196,7 @@ class AutoExchangeActivity : ComponentActivity() {
                 R.string.auto_exchange_priority_value,
                 selectedIds.indexOf(item.exchangeId) + 1
             )
-            setTextColor(ContextCompat.getColor(this@AutoExchangeActivity, R.color.nav_selected))
+            setTextColor(AppAccentColor.color(this@AutoExchangeActivity))
             textSize = 13f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -212,7 +213,7 @@ class AutoExchangeActivity : ComponentActivity() {
         return TextView(this).apply {
             text = textValue
             gravity = android.view.Gravity.CENTER
-            setTextColor(ContextCompat.getColor(this@AutoExchangeActivity, R.color.nav_selected))
+            setTextColor(AppAccentColor.color(this@AutoExchangeActivity))
             textSize = 18f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             background = ContextCompat.getDrawable(this@AutoExchangeActivity, R.drawable.bg_permission_action)

@@ -8,6 +8,7 @@ import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.TimePickerDialog
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.content.Context
 import android.content.pm.PackageManager
@@ -16,7 +17,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.DocumentsContract
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.View
@@ -24,11 +28,13 @@ import android.view.ViewGroup
 import android.view.Window
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
 import android.widget.ProgressBar
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -68,6 +74,23 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var preloadScreensRow: LinearLayout
     private lateinit var preloadScreensValue: TextView
     private lateinit var darkModeValue: TextView
+    private lateinit var accentColorRow: View
+    private lateinit var accentColorSwatch: View
+    private lateinit var accentColorName: TextView
+    private lateinit var accentColorValue: TextView
+    private lateinit var accentCustomContainer: LinearLayout
+    private lateinit var accentColorWheel: AccentColorWheelView
+    private lateinit var accentHexContainer: LinearLayout
+    private lateinit var accentHexInput: EditText
+    private lateinit var accentHexConfirm: TextView
+    private lateinit var accentRgbContainer: LinearLayout
+    private lateinit var accentRgbConfirm: TextView
+    private lateinit var accentRedSeek: SeekBar
+    private lateinit var accentGreenSeek: SeekBar
+    private lateinit var accentBlueSeek: SeekBar
+    private lateinit var accentRedInput: EditText
+    private lateinit var accentGreenInput: EditText
+    private lateinit var accentBlueInput: EditText
     private lateinit var likeEffectRow: LinearLayout
     private lateinit var likeEffectDivider: View
     private lateinit var likeEffectManagerRow: LinearLayout
@@ -89,6 +112,15 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var cameraPermissionStatus: TextView
     private lateinit var locationPermissionStatus: TextView
     private var runTestAfterNotificationPermission = false
+    private var updatingAccentControls = false
+    private var lastAppliedAccentColor: Int? = null
+    private var browseDataProgressDialog: AlertDialog? = null
+    private var browseDataProgressText: TextView? = null
+    private var browseDataProgressBar: ProgressBar? = null
+    private val consumedBrowseDataEventIds = mutableSetOf<Long>()
+    private val browseDataTaskListener: (BrowsingHistoryDataTaskManager.State) -> Unit = {
+        handleBrowseDataTaskState(it)
+    }
     private val likeEffectPreviewHandler = Handler(Looper.getMainLooper())
     private var likeEffectPreviewRunning = false
     private val likeEffectPreviewRunnable = object : Runnable {
@@ -142,6 +174,23 @@ class SettingsActivity : ComponentActivity() {
         preloadScreensRow = findViewById(R.id.preloadScreensRow)
         preloadScreensValue = findViewById(R.id.preloadScreensValue)
         darkModeValue = findViewById(R.id.darkModeValue)
+        accentColorRow = findViewById(R.id.accentColorRow)
+        accentColorSwatch = findViewById(R.id.accentColorSwatch)
+        accentColorName = findViewById(R.id.accentColorName)
+        accentColorValue = findViewById(R.id.accentColorValue)
+        accentCustomContainer = findViewById(R.id.accentCustomContainer)
+        accentColorWheel = findViewById(R.id.accentColorWheel)
+        accentHexContainer = findViewById(R.id.accentHexContainer)
+        accentHexInput = findViewById(R.id.accentHexInput)
+        accentHexConfirm = findViewById(R.id.accentHexConfirm)
+        accentRgbContainer = findViewById(R.id.accentRgbContainer)
+        accentRgbConfirm = findViewById(R.id.accentRgbConfirm)
+        accentRedSeek = findViewById(R.id.accentRedSeek)
+        accentGreenSeek = findViewById(R.id.accentGreenSeek)
+        accentBlueSeek = findViewById(R.id.accentBlueSeek)
+        accentRedInput = findViewById(R.id.accentRedInput)
+        accentGreenInput = findViewById(R.id.accentGreenInput)
+        accentBlueInput = findViewById(R.id.accentBlueInput)
         likeEffectRow = findViewById(R.id.likeEffectRow)
         likeEffectDivider = findViewById(R.id.likeEffectDivider)
         likeEffectManagerRow = findViewById(R.id.likeEffectManagerRow)
@@ -294,6 +343,15 @@ class SettingsActivity : ComponentActivity() {
         }
         preloadScreensRow.setOnClickListener { showPreloadScreensPicker() }
         findViewById<View>(R.id.darkModeRow).setOnClickListener { showDarkModePicker() }
+        bindAccentColorSettings()
+        val splashAnimationSwitch = findViewById<Switch>(R.id.splashAnimationSwitch)
+        splashAnimationSwitch.isChecked = AppPreferences.isSplashAnimationEnabled(this)
+        splashAnimationSwitch.setOnCheckedChangeListener { _, checked ->
+            AppPreferences.setSplashAnimationEnabled(this, checked)
+        }
+        findViewById<View>(R.id.splashAnimationRow).setOnClickListener {
+            splashAnimationSwitch.isChecked = !splashAnimationSwitch.isChecked
+        }
         val enhancedLikeSwitch = findViewById<Switch>(R.id.enhancedLikeSwitch)
         enhancedLikeSwitch.isChecked = AppPreferences.isEnhancedLikeInteractionEnabled(this)
         enhancedLikeSwitch.setOnCheckedChangeListener { _, checked ->
@@ -321,6 +379,17 @@ class SettingsActivity : ComponentActivity() {
         findViewById<View>(R.id.changelogRow).setOnClickListener { openChangelog() }
 
         findViewById<View>(R.id.clearCacheRow).setOnClickListener { clearWebCache() }
+        findViewById<View>(R.id.exportBrowseHistoryRow).setOnClickListener {
+            startExportBrowseHistory()
+        }
+        findViewById<View>(R.id.importBrowseHistoryRow).setOnClickListener {
+            importBrowseHistoryLauncher.launch(
+                arrayOf("application/zip", "application/octet-stream", "*/*")
+            )
+        }
+        findViewById<View>(R.id.clearBrowseHistoryRow).setOnClickListener {
+            confirmClearBrowseHistory()
+        }
         updateDisplayedTime()
         updateTimeEnabledState()
         updateAutoExchangeReserveValue()
@@ -328,6 +397,7 @@ class SettingsActivity : ComponentActivity() {
         updateDisplayedPreloadScreens()
         updatePreloadEnabledState(preloadSwitch.isChecked)
         updateDarkModeValue()
+        updateAccentColorUi()
         updateLikeEffectValue()
         updateLikeEffectDurationValue()
         updateLikeEffectSizeValue()
@@ -340,6 +410,20 @@ class SettingsActivity : ComponentActivity() {
             ?.let { runCatching { SettingsPage.valueOf(it) }.getOrNull() }
             ?: SettingsPage.CATEGORIES
         showSettingsPageImmediately(restoredPage)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        BrowsingHistoryDataTaskManager.addListener(browseDataTaskListener)
+    }
+
+    override fun onStop() {
+        BrowsingHistoryDataTaskManager.removeListener(browseDataTaskListener)
+        browseDataProgressDialog?.dismiss()
+        browseDataProgressDialog = null
+        browseDataProgressText = null
+        browseDataProgressBar = null
+        super.onStop()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -359,6 +443,18 @@ class SettingsActivity : ComponentActivity() {
             updateAutoExchangeReserveValue()
             updateAutoExchangeVisibility()
         }
+    }
+
+    private val exportBrowseHistoryLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        uri?.let { BrowsingHistoryDataTaskManager.startExport(this, it) }
+    }
+
+    private val importBrowseHistoryLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { BrowsingHistoryDataTaskManager.startPrepareImport(this, it) }
     }
 
     override fun onPause() {
@@ -691,6 +787,265 @@ class SettingsActivity : ComponentActivity() {
         )
     }
 
+    private fun bindAccentColorSettings() {
+        accentColorRow.setOnClickListener { showAccentColorPicker() }
+        accentColorWheel.onColorChanged = { color ->
+            AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_WHEEL, color)
+            updateAccentColorUi(syncEditorControls = false)
+        }
+        accentHexInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingAccentControls) return
+                AppAccentColor.parseHex(s?.toString().orEmpty())?.let { color ->
+                    AppPreferences.setCustomAccentColor(this@SettingsActivity, AppPreferences.ACCENT_COLOR_HEX, color)
+                    updateAccentColorUi(syncEditorControls = false)
+                }
+            }
+        })
+        accentHexInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) validateHexAccentOrReset()
+        }
+        accentHexConfirm.setOnClickListener { validateHexAccentOrReset() }
+        bindRgbSeekBar(accentRedSeek, accentRedInput)
+        bindRgbSeekBar(accentGreenSeek, accentGreenInput)
+        bindRgbSeekBar(accentBlueSeek, accentBlueInput)
+        bindRgbInput(accentRedInput, accentRedSeek)
+        bindRgbInput(accentGreenInput, accentGreenSeek)
+        bindRgbInput(accentBlueInput, accentBlueSeek)
+        accentRgbConfirm.setOnClickListener { validateRgbAccentOrReset() }
+    }
+
+    private fun showAccentColorPicker() {
+        val options = listOf(
+            AppPreferences.ACCENT_COLOR_DEFAULT to getString(R.string.accent_color_default),
+            AppPreferences.ACCENT_COLOR_WHEEL to getString(R.string.accent_color_wheel),
+            AppPreferences.ACCENT_COLOR_HEX to getString(R.string.accent_color_hex),
+            AppPreferences.ACCENT_COLOR_RGB to getString(R.string.accent_color_rgb)
+        )
+        val checkedMode = AppPreferences.getAccentColorMode(this)
+        val accent = AppAccentColor.color(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 8.dp(), 0, 8.dp())
+        }
+        options.forEach { (mode, label) ->
+            val row = LinearLayout(this).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(24.dp(), 12.dp(), 24.dp(), 12.dp())
+                isClickable = true
+                isFocusable = true
+            }
+            val dot = View(this).apply {
+                background = AppAccentColor.circleDrawable(
+                    if (mode == checkedMode) accent else Color.TRANSPARENT,
+                    accent
+                )
+            }
+            row.addView(dot, LinearLayout.LayoutParams(18.dp(), 18.dp()).apply {
+                marginEnd = 14.dp()
+            })
+            row.addView(TextView(this).apply {
+                text = label
+                setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.error_text))
+                textSize = 15f
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            row.setOnClickListener {
+                if (mode == AppPreferences.ACCENT_COLOR_DEFAULT) {
+                    AppPreferences.setDefaultAccentColor(this)
+                } else {
+                    AppPreferences.setCustomAccentColor(this, mode, AppAccentColor.color(this))
+                }
+                accentPickerDialog?.dismiss()
+                updateAccentColorUi()
+            }
+            container.addView(row)
+        }
+        accentPickerDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.accent_color_title)
+            .setView(container)
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private var accentPickerDialog: AlertDialog? = null
+
+    private fun updateAccentColorUi(syncEditorControls: Boolean = true) {
+        val color = AppAccentColor.color(this)
+        val mode = AppPreferences.getAccentColorMode(this)
+        accentColorSwatch.background = AppAccentColor.circleDrawable(
+            color,
+            ContextCompat.getColor(this, R.color.nav_divider)
+        )
+        accentColorName.text = AppAccentColor.displayName(this)
+        accentColorValue.text = "${AppAccentColor.hex(color)}  ${AppAccentColor.rgbText(color)}"
+        accentCustomContainer.visibility =
+            if (mode == AppPreferences.ACCENT_COLOR_DEFAULT) View.GONE else View.VISIBLE
+        accentColorWheel.visibility =
+            if (mode == AppPreferences.ACCENT_COLOR_WHEEL) View.VISIBLE else View.GONE
+        accentHexContainer.visibility =
+            if (mode == AppPreferences.ACCENT_COLOR_HEX) View.VISIBLE else View.GONE
+        accentRgbContainer.visibility =
+            if (mode == AppPreferences.ACCENT_COLOR_RGB) View.VISIBLE else View.GONE
+
+        if (syncEditorControls) {
+            updatingAccentControls = true
+            accentColorWheel.setColor(color)
+            accentHexInput.setText(AppAccentColor.hex(color))
+            setRgbControls(color)
+            updatingAccentControls = false
+        }
+        applyDynamicAccentToSettingsUi()
+    }
+
+    private fun bindRgbSeekBar(seekBar: SeekBar, input: EditText) {
+        seekBar.max = 255
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (!fromUser || updatingAccentControls) return
+                updatingAccentControls = true
+                input.setText(progress.toString())
+                input.setSelection(input.text.length)
+                updatingAccentControls = false
+                applyRgbAccentFromControls()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+    }
+
+    private fun bindRgbInput(input: EditText, seekBar: SeekBar) {
+        input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingAccentControls) return
+                val value = s?.toString()?.toIntOrNull() ?: return
+                if (value !in 0..255) return
+                updatingAccentControls = true
+                seekBar.progress = value
+                updatingAccentControls = false
+                applyRgbAccentFromControls()
+            }
+        })
+        input.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) validateRgbAccentOrReset()
+        }
+    }
+
+    private fun validateHexAccentOrReset() {
+        val color = AppAccentColor.parseHex(accentHexInput.text?.toString().orEmpty())
+        if (color == null) {
+            resetAccentColorAfterFormatError()
+        } else {
+            AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_HEX, color)
+            updateAccentColorUi()
+        }
+    }
+
+    private fun validateRgbAccentOrReset() {
+        val color = currentRgbColorOrNull()
+        if (color == null) {
+            resetAccentColorAfterFormatError()
+        } else {
+            AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_RGB, color)
+            updateAccentColorUi()
+        }
+    }
+
+    private fun applyRgbAccentFromControls() {
+        currentRgbColorOrNull()?.let { color ->
+            AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_RGB, color)
+            updateAccentColorUi(syncEditorControls = false)
+        }
+    }
+
+    private fun currentRgbColorOrNull(): Int? {
+        val red = accentRedInput.text?.toString()?.toIntOrNull()
+        val green = accentGreenInput.text?.toString()?.toIntOrNull()
+        val blue = accentBlueInput.text?.toString()?.toIntOrNull()
+        if (red == null || green == null || blue == null) return null
+        if (red !in 0..255 || green !in 0..255 || blue !in 0..255) return null
+        return Color.rgb(red, green, blue)
+    }
+
+    private fun setRgbControls(color: Int) {
+        val red = Color.red(color)
+        val green = Color.green(color)
+        val blue = Color.blue(color)
+        accentRedSeek.progress = red
+        accentGreenSeek.progress = green
+        accentBlueSeek.progress = blue
+        accentRedInput.setText(red.toString())
+        accentGreenInput.setText(green.toString())
+        accentBlueInput.setText(blue.toString())
+    }
+
+    private fun resetAccentColorAfterFormatError() {
+        AppPreferences.setDefaultAccentColor(this)
+        updateAccentColorUi()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.accent_color_format_error_title)
+            .setMessage(R.string.accent_color_format_error_message)
+            .setPositiveButton(R.string.permission_confirm, null)
+            .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private fun tintDialogButtons(dialog: AlertDialog) {
+        val accent = AppAccentColor.color(this)
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accent)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
+        }
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accent)
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
+    }
+
+    private fun applyDynamicAccentToSettingsUi() {
+        val accent = AppAccentColor.color(this)
+        val defaultAccent = ContextCompat.getColor(this, R.color.nav_selected)
+        val previousAccent = lastAppliedAccentColor
+        applyDynamicAccentRecursively(window.decorView, accent, defaultAccent, previousAccent)
+        lastAppliedAccentColor = accent
+    }
+
+    private fun applyDynamicAccentRecursively(
+        view: View,
+        accent: Int,
+        defaultAccent: Int,
+        previousAccent: Int?
+    ) {
+        when (view) {
+            is Switch -> AppAccentColor.tintSwitch(view, this)
+            is SeekBar -> {
+                val list = ColorStateList.valueOf(accent)
+                view.progressTintList = list
+                view.thumbTintList = list
+            }
+            is ProgressBar -> AppAccentColor.tintProgress(view, this)
+            is TextView -> {
+                val current = view.textColors.defaultColor
+                if (current == defaultAccent || current == previousAccent) {
+                    view.setTextColor(accent)
+                }
+            }
+        }
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                applyDynamicAccentRecursively(view.getChildAt(index), accent, defaultAccent, previousAccent)
+            }
+        }
+    }
+
+    private fun Int.dp() = (this * resources.displayMetrics.density + 0.5f).toInt()
+
     private fun showLikeEffectPicker() {
         val options = LikeEffectAssets.pickerOptions(this)
         val selectedId = AppPreferences.getLikeEffect(this)
@@ -940,6 +1295,7 @@ class SettingsActivity : ComponentActivity() {
     private fun updateCacheSize() {
         cacheSizeValue.text = getString(R.string.cache_size_calculating)
         Thread {
+            BrowsingHistoryDataTaskManager.cleanupOldImportCaches(applicationContext)
             val size = WebCacheUtils.getCacheSize(applicationContext)
             runOnUiThread {
                 if (!isFinishing && !isDestroyed) {
@@ -967,7 +1323,283 @@ class SettingsActivity : ComponentActivity() {
         }.start()
     }
 
+    private fun startExportBrowseHistory() {
+        val startMillis = System.currentTimeMillis()
+        exportBrowseHistoryLauncher.launch(
+            BrowsingHistoryDataTaskManager.defaultExportFileName(startMillis)
+        )
+    }
+
+    private fun confirmClearBrowseHistory() {
+        AlertDialog.Builder(this)
+            .setMessage(R.string.browse_history_clear_confirm_message)
+            .setPositiveButton(R.string.permission_confirm) { _, _ ->
+                BrowsingHistoryDataTaskManager.clearHistory(this)
+            }
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private fun handleBrowseDataTaskState(state: BrowsingHistoryDataTaskManager.State) {
+        when (state) {
+            BrowsingHistoryDataTaskManager.State.Idle -> {
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+            }
+            is BrowsingHistoryDataTaskManager.State.Progress -> {
+                setBrowseDataActionsEnabled(false)
+                showBrowseDataProgressDialog(state)
+            }
+            is BrowsingHistoryDataTaskManager.State.ExportSuccess -> {
+                if (!consumeBrowseDataEventOnce(state.eventId)) return
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+                showExportSuccessDialog(state.uri)
+                updateCacheSize()
+                updateStorageSpace()
+                BrowsingHistoryDataTaskManager.consumeOneShotState(state.eventId)
+            }
+            is BrowsingHistoryDataTaskManager.State.ImportPreview -> {
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+                showImportPreviewDialog(state.stats)
+            }
+            is BrowsingHistoryDataTaskManager.State.ImportSuccess -> {
+                if (!consumeBrowseDataEventOnce(state.eventId)) return
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+                showImportSuccessDialog(state.result)
+                updateCacheSize()
+                updateStorageSpace()
+                BrowsingHistoryDataTaskManager.consumeOneShotState(state.eventId)
+            }
+            is BrowsingHistoryDataTaskManager.State.ClearSuccess -> {
+                if (!consumeBrowseDataEventOnce(state.eventId)) return
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+                updateCacheSize()
+                Toast.makeText(this, R.string.browse_history_cleared, Toast.LENGTH_SHORT).show()
+                BrowsingHistoryDataTaskManager.consumeOneShotState(state.eventId)
+            }
+            is BrowsingHistoryDataTaskManager.State.Error -> {
+                if (!consumeBrowseDataEventOnce(state.eventId)) return
+                setBrowseDataActionsEnabled(true)
+                hideBrowseDataProgressDialog()
+                AlertDialog.Builder(this)
+                    .setMessage(state.message)
+                    .setPositiveButton(R.string.permission_confirm, null)
+                    .show()
+                    .also { tintDialogButtons(it) }
+                BrowsingHistoryDataTaskManager.consumeOneShotState(state.eventId)
+            }
+        }
+    }
+
+    private fun consumeBrowseDataEventOnce(eventId: Long): Boolean {
+        if (consumedBrowseDataEventIds.contains(eventId)) return false
+        consumedBrowseDataEventIds += eventId
+        if (consumedBrowseDataEventIds.size > 32) {
+            consumedBrowseDataEventIds.remove(consumedBrowseDataEventIds.first())
+        }
+        return true
+    }
+
+    private fun showBrowseDataProgressDialog(
+        state: BrowsingHistoryDataTaskManager.State.Progress
+    ) {
+        val dialog = browseDataProgressDialog ?: createBrowseDataProgressDialog().also {
+            browseDataProgressDialog = it
+            it.show()
+        }
+        dialog.setTitle(state.title)
+        browseDataProgressText?.text = state.message
+        browseDataProgressBar?.apply {
+            isIndeterminate = state.indeterminate
+            progress = state.percent
+        }
+    }
+
+    private fun createBrowseDataProgressDialog(): AlertDialog {
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 12.dp(), 24.dp(), 8.dp())
+        }
+        val message = TextView(this).apply {
+            setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.error_text))
+            textSize = 14f
+        }
+        val progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            isIndeterminate = true
+            AppAccentColor.tintProgress(this, this@SettingsActivity)
+        }
+        content.addView(message)
+        content.addView(progress, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = 14.dp() })
+        browseDataProgressText = message
+        browseDataProgressBar = progress
+        return AlertDialog.Builder(this)
+            .setView(content)
+            .create()
+            .apply {
+                setCanceledOnTouchOutside(false)
+                setOnKeyListener { _, keyCode, _ ->
+                    keyCode == android.view.KeyEvent.KEYCODE_BACK
+                }
+            }
+    }
+
+    private fun hideBrowseDataProgressDialog() {
+        browseDataProgressDialog?.dismiss()
+        browseDataProgressDialog = null
+        browseDataProgressText = null
+        browseDataProgressBar = null
+    }
+
+    private fun showExportSuccessDialog(uri: Uri) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.browse_history_export_done_title)
+            .setPositiveButton(R.string.open_export_directory) { _, _ ->
+                openExportDirectory(uri)
+            }
+            .setNegativeButton(R.string.permission_confirm, null)
+            .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private fun openExportDirectory(uri: Uri) {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri)
+        }
+        runCatching { startActivity(intent) }
+            .onFailure {
+                Toast.makeText(
+                    this,
+                    R.string.cannot_open_export_directory,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+    }
+
+    private fun showImportPreviewDialog(stats: BrowsingHistoryDataTaskManager.ImportPreviewStats) {
+        val message = getString(
+            R.string.browse_history_import_preview,
+            stats.backupRecords,
+            stats.localRecords,
+            stats.newRecords,
+            stats.duplicates,
+            stats.differences
+        )
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 8.dp(), 24.dp(), 8.dp())
+        }
+        content.addView(TextView(this).apply {
+            text = message
+            setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.error_text))
+            textSize = 14f
+            setLineSpacing(2.dp().toFloat(), 1f)
+        })
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.browse_history_import_preview_title)
+            .setView(content)
+            .create()
+        fun addAction(label: String, action: () -> Unit) {
+            content.addView(TextView(this).apply {
+                text = label
+                setTextColor(AppAccentColor.color(this@SettingsActivity))
+                textSize = 15f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, 14.dp(), 0, 14.dp())
+                setOnClickListener {
+                    dialog.dismiss()
+                    action()
+                }
+            })
+        }
+        addAction(getString(R.string.browse_history_import_replace)) { confirmReplaceImport() }
+        addAction(getString(R.string.browse_history_import_add)) {
+            BrowsingHistoryDataTaskManager.applyPreparedImport(
+                this,
+                BrowsingHistoryDataTaskManager.ImportMode.ADD
+            )
+        }
+        addAction(getString(R.string.browse_history_import_merge)) {
+            BrowsingHistoryDataTaskManager.applyPreparedImport(
+                this,
+                BrowsingHistoryDataTaskManager.ImportMode.MERGE
+            )
+        }
+        addAction(getString(R.string.permission_cancel)) {
+            BrowsingHistoryDataTaskManager.discardPreparedImport()
+        }
+        dialog.setOnCancelListener { BrowsingHistoryDataTaskManager.discardPreparedImport() }
+        dialog.show()
+    }
+
+    private fun confirmReplaceImport() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.browse_history_replace_confirm_title)
+            .setMessage(R.string.browse_history_replace_confirm_message)
+            .setPositiveButton(R.string.permission_confirm) { _, _ ->
+                BrowsingHistoryDataTaskManager.applyPreparedImport(
+                    this,
+                    BrowsingHistoryDataTaskManager.ImportMode.REPLACE
+                )
+            }
+            .setNegativeButton(R.string.permission_cancel) { _, _ ->
+                BrowsingHistoryDataTaskManager.discardPreparedImport()
+            }
+            .show()
+            .also {
+                it.setOnCancelListener { BrowsingHistoryDataTaskManager.discardPreparedImport() }
+                tintDialogButtons(it)
+            }
+    }
+
+    private fun showImportSuccessDialog(result: BrowsingHistoryRepository.ImportApplyResult) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.browse_history_import_done_title)
+            .setMessage(
+                getString(
+                    R.string.browse_history_import_done_message,
+                    result.added,
+                    result.updated,
+                    result.duplicateSkipped,
+                    result.diffSkipped,
+                    result.failed
+                )
+            )
+            .setPositiveButton(R.string.permission_confirm, null)
+            .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private fun setBrowseDataActionsEnabled(enabled: Boolean) {
+        listOf(
+            R.id.exportBrowseHistoryRow,
+            R.id.importBrowseHistoryRow,
+            R.id.clearBrowseHistoryRow,
+            R.id.clearCacheRow
+        ).forEach { id ->
+            findViewById<View>(id).apply {
+                isEnabled = enabled
+                alpha = if (enabled) 1f else 0.45f
+            }
+        }
+    }
+
     private fun clearWebCache() {
+        if (BrowsingHistoryDataTaskManager.isTaskRunning()) {
+            Toast.makeText(this, R.string.browse_history_task_running, Toast.LENGTH_SHORT).show()
+            return
+        }
         val cacheRow = findViewById<View>(R.id.clearCacheRow)
         cacheRow.isEnabled = false
         cacheSizeValue.text = getString(R.string.cache_clearing)
@@ -1003,10 +1635,8 @@ class SettingsActivity : ComponentActivity() {
             if (enabled) R.string.permission_status_enabled else R.string.permission_status_disabled
         )
         view.setTextColor(
-            ContextCompat.getColor(
-                this,
-                if (enabled) R.color.nav_selected else R.color.nav_unselected
-            )
+            if (enabled) AppAccentColor.color(this)
+            else ContextCompat.getColor(this, R.color.nav_unselected)
         )
     }
 

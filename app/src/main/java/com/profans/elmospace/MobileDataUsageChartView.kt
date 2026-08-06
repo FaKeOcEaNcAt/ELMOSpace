@@ -15,7 +15,7 @@ class MobileDataUsageChartView @JvmOverloads constructor(
     private val density = resources.displayMetrics.density
     private val scaledDensity = density * resources.configuration.fontScale
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.nav_selected)
+        color = AppAccentColor.color(context)
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ContextCompat.getColor(context, R.color.nav_divider)

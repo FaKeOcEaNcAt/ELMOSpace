@@ -68,10 +68,8 @@ class MobileDataUsageActivity : ComponentActivity() {
         periodButtons.forEachIndexed { index, button ->
             val selected = index == selectedPeriod.ordinal
             button.setTextColor(
-                ContextCompat.getColor(
-                    this,
-                    if (selected) R.color.nav_selected else R.color.nav_unselected
-                )
+                if (selected) AppAccentColor.color(this)
+                else ContextCompat.getColor(this, R.color.nav_unselected)
             )
             button.alpha = if (selected) 1f else 0.72f
         }

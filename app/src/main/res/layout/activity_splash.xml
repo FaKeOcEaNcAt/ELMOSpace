@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splashRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_splash_window">
+
+    <LinearLayout
+        android:id="@+id/splashContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp">
+
+        <TextView
+            android:id="@+id/splashCaption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.16"
+            android:text="ELMO SPACE"
+            android:textColor="@color/splash_caption"
+            android:textSize="28sp" />
+
+        <View
+            android:id="@+id/splashAccentLine"
+            android:layout_width="184dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="22dp"
+            android:background="@color/nav_selected"
+            android:pivotX="50%" />
+    </LinearLayout>
+</FrameLayout>

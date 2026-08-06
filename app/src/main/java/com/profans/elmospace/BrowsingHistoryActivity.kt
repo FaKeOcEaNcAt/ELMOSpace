@@ -7,10 +7,14 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.BaseAdapter
+import android.widget.EditText
 import android.widget.ListView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -29,6 +33,8 @@ class BrowsingHistoryActivity : ComponentActivity() {
     private lateinit var resultCount: TextView
     private lateinit var emptyState: TextView
     private lateinit var historyList: ListView
+    private lateinit var searchPanel: View
+    private lateinit var searchInput: EditText
     private lateinit var adapter: HistoryAdapter
 
     private val databaseExecutor = Executors.newSingleThreadExecutor()
@@ -36,6 +42,8 @@ class BrowsingHistoryActivity : ComponentActivity() {
     private var customStart = 0L
     private var customEndExclusive = 0L
     private var activeDialog: Dialog? = null
+    @Volatile
+    private var loadGeneration = 0
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppTheme.wrap(newBase))
@@ -51,12 +59,24 @@ class BrowsingHistoryActivity : ComponentActivity() {
         resultCount = findViewById(R.id.historyResultCount)
         emptyState = findViewById(R.id.historyEmpty)
         historyList = findViewById(R.id.historyList)
+        searchPanel = findViewById(R.id.historySearchPanel)
+        searchInput = findViewById(R.id.historySearchInput)
         adapter = HistoryAdapter(this)
         historyList.adapter = adapter
 
         findViewById<View>(R.id.historyBack).setOnClickListener { finishWithTransition() }
+        findViewById<View>(R.id.historySearch).setOnClickListener { showSearchPanel() }
+        findViewById<View>(R.id.historySearchClose).setOnClickListener { hideSearchPanel() }
         findViewById<View>(R.id.historyFilterRow).setOnClickListener { showFilterPicker() }
         findViewById<View>(R.id.historyClear).setOnClickListener { confirmClearHistory() }
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                loadHistory()
+            }
+
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
         historyList.setOnItemClickListener { _, _, position, _ ->
             openHistoryEntry(adapter.getItem(position))
         }
@@ -147,14 +167,18 @@ class BrowsingHistoryActivity : ComponentActivity() {
 
     private fun loadHistory() {
         val range = selectedFilter.range(customStart, customEndExclusive)
+        val searchQuery = searchInput.text?.toString()?.trim().orEmpty()
+        val generation = ++loadGeneration
         databaseExecutor.execute {
             val entries = BrowsingHistoryRepository.query(
                 this,
                 range.first,
                 range.second,
-                likedOnly = selectedFilter == HistoryFilter.LIKED
+                likedOnly = selectedFilter == HistoryFilter.LIKED,
+                searchQuery = searchQuery
             )
             runOnUiThread {
+                if (generation != loadGeneration) return@runOnUiThread
                 if (isFinishing || isDestroyed) return@runOnUiThread
                 adapter.submit(entries)
                 resultCount.text = getString(R.string.history_result_count, entries.size)
@@ -179,6 +203,25 @@ class BrowsingHistoryActivity : ComponentActivity() {
             .setNegativeButton(R.string.permission_cancel, null)
             .create()
         showManagedDialog(dialog)
+    }
+
+    private fun showSearchPanel() {
+        searchPanel.visibility = View.VISIBLE
+        searchInput.requestFocus()
+        searchInput.post {
+            val inputMethodManager =
+                getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+            inputMethodManager?.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun hideSearchPanel() {
+        searchInput.text?.clear()
+        searchPanel.visibility = View.GONE
+        val inputMethodManager =
+            getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+        inputMethodManager?.hideSoftInputFromWindow(searchInput.windowToken, 0)
+        loadHistory()
     }
 
     private fun showManagedDialog(dialog: Dialog) {
