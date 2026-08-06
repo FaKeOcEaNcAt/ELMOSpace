@@ -4,7 +4,7 @@
 
 艾莫空间是一个面向 `gf2-bbs.exiliumgf.com` 移动端网页的非官方 Android WebView 客户端，用于改善移动端浏览体验。项目目前仍处于测试阶段，功能、界面和兼容性都可能继续调整。
 
-当前版本：`V0.1.16 Build2607212327`
+当前版本：`V0.1.19-Build26080623147`
 
 最新版本下载：
 
@@ -32,7 +32,7 @@
 
 当前版本也可以直接下载：
 
-[ElmoSpace-Beta-V0.1.18-Build2607292306.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19/ElmoSpace-Beta-V0.1.19-Build2608062314.apk)
+[ElmoSpace-Beta-V0.1.19-Build2608062314.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19/ElmoSpace-Beta-V0.1.19-Build2608062314.apk)
 
 如果你没有使用过 GitHub，可以按下面的方式找：
 
