@@ -8,8 +8,8 @@
 
 最新版本下载：
 
-- [直达最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88)
-- [直接下载当前版本 APK](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
+- [直达最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19)
+- [直接下载当前版本 APK](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19/ElmoSpace-Beta-V0.1.19-Build2608062314.apk)
 - [查看全部 Releases](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases)
 
 ## 项目状态
@@ -25,14 +25,14 @@
 
 推荐下载位置：
 
-1. 打开 [最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88)。
+1. 打开 [最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19)。
 2. 在页面下方找到 `Assets`。
 3. 下载其中的 `.apk` 安装包。
 4. 在 Android 手机上安装该 APK。
 
 当前版本也可以直接下载：
 
-[ElmoSpace-Beta-V0.1.18-Build2607292306.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88/ElmoSpace-Beta-V0.1.16-Build2607212327.apk)
+[ElmoSpace-Beta-V0.1.18-Build2607292306.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19/ElmoSpace-Beta-V0.1.19-Build2608062314.apk)
 
 如果你没有使用过 GitHub，可以按下面的方式找：
 
