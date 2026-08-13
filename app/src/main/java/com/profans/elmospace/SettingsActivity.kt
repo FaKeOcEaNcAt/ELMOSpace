@@ -247,6 +247,15 @@ class SettingsActivity : ComponentActivity() {
         findViewById<View>(R.id.officialStoreRow).setOnClickListener {
             openOfficialStore()
         }
+        findViewById<View>(R.id.officialGf2WebsiteRow).setOnClickListener {
+            openExternalUrl(OFFICIAL_GF2_WEBSITE_URL)
+        }
+        findViewById<View>(R.id.officialSteamGfRow).setOnClickListener {
+            openSteamGame(STEAM_GIRLS_FRONTLINE_APP_ID)
+        }
+        findViewById<View>(R.id.officialSteamGf2Row).setOnClickListener {
+            openSteamGame(STEAM_GIRLS_FRONTLINE_2_APP_ID)
+        }
         findViewById<View>(R.id.officialBilibiliGfRow).setOnClickListener {
             openBilibiliUser(OFFICIAL_BILIBILI_GF_UID)
         }
@@ -254,10 +263,16 @@ class SettingsActivity : ComponentActivity() {
             openBilibiliUser(OFFICIAL_BILIBILI_GF2_UID)
         }
         findViewById<View>(R.id.officialWeiboGfRow).setOnClickListener {
-            openExternalUrl(OFFICIAL_WEIBO_GF_URL)
+            openWeiboUser(OFFICIAL_WEIBO_GF_UID)
+        }
+        findViewById<View>(R.id.officialWeiboGf2Row).setOnClickListener {
+            openWeiboUser(OFFICIAL_WEIBO_GF2_UID)
         }
         findViewById<View>(R.id.officialWechatGfRow).setOnClickListener {
-            openWechatOfficialAccount()
+            openWechatOfficialAccount(WECHAT_OFFICIAL_ACCOUNT_GF_URL)
+        }
+        findViewById<View>(R.id.officialWechatGf2Row).setOnClickListener {
+            openWechatOfficialAccount(WECHAT_OFFICIAL_ACCOUNT_GF2_URL)
         }
 
         val deviceSecurityCheckSwitch = findViewById<Switch>(R.id.deviceSecurityCheckSwitch)
@@ -1937,6 +1952,14 @@ class SettingsActivity : ComponentActivity() {
         openExternalUrl(OFFICIAL_STORE_URL)
     }
 
+    private fun openSteamGame(appId: Long) {
+        val deepLink = "steam://store/$appId"
+        val webUrl = "https://store.steampowered.com/app/$appId/"
+        if (tryOpenPackage(deepLink, STEAM_PACKAGE)) return
+        if (tryOpenPackage(webUrl, STEAM_PACKAGE)) return
+        openExternalUrl(webUrl)
+    }
+
     private fun openBilibiliUser(uid: Long) {
         val deepLink = "bilibili://space/$uid"
         val webUrl = "https://space.bilibili.com/$uid"
@@ -1945,10 +1968,18 @@ class SettingsActivity : ComponentActivity() {
         openExternalUrl(webUrl)
     }
 
-    private fun openWechatOfficialAccount() {
-        if (tryOpenPackage(WECHAT_OFFICIAL_ACCOUNT_URL, WECHAT_PACKAGE)) return
+    private fun openWeiboUser(uid: Long) {
+        val deepLink = "sinaweibo://userinfo?uid=$uid"
+        val webUrl = "https://weibo.com/u/$uid"
+        if (tryOpenPackage(deepLink, WEIBO_PACKAGE)) return
+        if (tryOpenPackage(webUrl, WEIBO_PACKAGE)) return
+        openExternalUrl(webUrl)
+    }
+
+    private fun openWechatOfficialAccount(accountUrl: String) {
+        if (tryOpenPackage(accountUrl, WECHAT_PACKAGE)) return
         if (tryOpenPackage(WECHAT_OFFICIAL_ACCOUNTS_DEEP_LINK, WECHAT_PACKAGE)) return
-        openExternalUrl(WECHAT_OFFICIAL_ACCOUNT_URL)
+        openExternalUrl(accountUrl)
     }
 
     private fun tryOpenPackage(url: String, packageName: String): Boolean {
@@ -2003,13 +2034,21 @@ class SettingsActivity : ComponentActivity() {
             "tbopen://m.taobao.com/tbopen/index.html?action=ali.open.nav&module=h5&h5Url=https%3A%2F%2Fgirlsfrontline.tmall.com%2F"
         private const val TAOBAO_PACKAGE = "com.taobao.taobao"
         private const val TMALL_PACKAGE = "com.tmall.wireless"
+        private const val OFFICIAL_GF2_WEBSITE_URL = "https://gf2.sunborngame.com/main"
+        private const val STEAM_PACKAGE = "com.valvesoftware.android.steam.community"
+        private const val STEAM_GIRLS_FRONTLINE_APP_ID = 3347970L
+        private const val STEAM_GIRLS_FRONTLINE_2_APP_ID = 3308670L
         private const val BILIBILI_PACKAGE = "tv.danmaku.bili"
         private const val OFFICIAL_BILIBILI_GF_UID = 32472953L
         private const val OFFICIAL_BILIBILI_GF2_UID = 697654195L
-        private const val OFFICIAL_WEIBO_GF_URL = "https://weibo.com/u/5611537367"
+        private const val WEIBO_PACKAGE = "com.sina.weibo"
+        private const val OFFICIAL_WEIBO_GF_UID = 5611537367L
+        private const val OFFICIAL_WEIBO_GF2_UID = 7367502517L
         private const val WECHAT_PACKAGE = "com.tencent.mm"
-        private const val WECHAT_OFFICIAL_ACCOUNT_URL =
+        private const val WECHAT_OFFICIAL_ACCOUNT_GF_URL =
             "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI4NjI3OTIyOA%3D%3D&scene=124#wechat_redirect"
+        private const val WECHAT_OFFICIAL_ACCOUNT_GF2_URL =
+            "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg4NTM0NTI2MA%3D%3D&scene=124#wechat_redirect"
         private const val WECHAT_OFFICIAL_ACCOUNTS_DEEP_LINK =
             "weixin://dl/officialaccounts"
     }

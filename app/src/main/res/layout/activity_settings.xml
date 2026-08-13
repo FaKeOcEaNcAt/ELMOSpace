@@ -234,6 +234,45 @@
                     </LinearLayout>
                     <View style="@style/SettingsDivider" />
                     <LinearLayout
+                        android:id="@+id/officialGf2WebsiteRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_gf2_website"
+                            android:src="@drawable/ic_settings_link" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_gf2_website" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialSteamGfRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_steam_gf"
+                            android:src="@drawable/ic_official_steam" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_steam_gf" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialSteamGf2Row"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_steam_gf2"
+                            android:src="@drawable/ic_official_steam" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_steam_gf2" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
                         android:id="@+id/officialBilibiliGfRow"
                         style="@style/SettingsRow">
                         <ImageView
@@ -273,6 +312,19 @@
                     </LinearLayout>
                     <View style="@style/SettingsDivider" />
                     <LinearLayout
+                        android:id="@+id/officialWeiboGf2Row"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_weibo_gf2"
+                            android:src="@drawable/ic_official_weibo" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_weibo_gf2" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
                         android:id="@+id/officialWechatGfRow"
                         style="@style/SettingsRow">
                         <ImageView
@@ -282,6 +334,19 @@
                         <TextView
                             style="@style/SettingsRowTitle"
                             android:text="@string/official_wechat_gf" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialWechatGf2Row"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_wechat_gf2"
+                            android:src="@drawable/ic_official_wechat" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_wechat_gf2" />
                         <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
                 </LinearLayout>

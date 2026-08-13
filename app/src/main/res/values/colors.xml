@@ -12,6 +12,9 @@
     <color name="beta_background">#FFFFE0A3</color>
     <color name="beta_text">#FF6E4300</color>
     <color name="danger_text">#FFC23B32</color>
+    <color name="update_progress_card">#F2FFFFFF</color>
+    <color name="update_progress_text_primary">#FF111111</color>
+    <color name="update_progress_text_secondary">#E6000000</color>
     <color name="splash_background_start">#FFFFFFFF</color>
     <color name="splash_background_end">#FFFFFFFF</color>
     <color name="splash_caption">#FFF26C1C</color>

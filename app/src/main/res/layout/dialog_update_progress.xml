@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_update_progress_dialog"
     android:orientation="vertical"
     android:padding="22dp">
 
@@ -10,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/downloading_update"
-        android:textColor="@color/error_text"
+        android:textColor="@color/update_progress_text_primary"
         android:textSize="17sp"
         android:textStyle="bold" />
 
@@ -19,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:textColor="@color/nav_unselected"
+        android:textColor="@color/update_progress_text_secondary"
         android:textSize="13sp" />
 
     <ProgressBar
@@ -37,7 +38,7 @@
         android:layout_marginTop="12dp"
         android:lineSpacingExtra="2dp"
         android:text="@string/update_slow_download_tip"
-        android:textColor="@color/nav_unselected"
+        android:textColor="@color/update_progress_text_secondary"
         android:textSize="12sp"
         android:visibility="gone" />
 

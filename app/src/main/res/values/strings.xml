@@ -64,7 +64,12 @@
     <string name="official_bilibili_gf">BiliBili少女前线制作组</string>
     <string name="official_bilibili_gf2">BiliBili少女前线2-追放制作组</string>
     <string name="official_weibo_gf">Weibo少女前线官方微博</string>
+    <string name="official_weibo_gf2">Weibo少女前线2-追放</string>
     <string name="official_wechat_gf">WeChat少女前线订阅号</string>
+    <string name="official_wechat_gf2">WeChat少女前线2-追放制作组</string>
+    <string name="official_steam_gf">Steam少女前线</string>
+    <string name="official_steam_gf2">Steam少女前線2：追放(国际服 锁国区)</string>
+    <string name="official_gf2_website">少女前线2-追放官方网站</string>
     <string name="settings_app_section">签到模块</string>
     <string name="settings_storage_section">存储管理</string>
     <string name="history_title">历史记录</string>
@@ -230,7 +235,7 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.23 Build2608140044</string>
+    <string name="version_display">V0.1.24 Build2608140112</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
@@ -243,8 +248,8 @@
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="current_version_changelog_section">当前版本更新日志</string>
-    <item name="current_version_changelog_title" type="string">@string/changelog_v033_title</item>
-    <item name="current_version_changelog_body" type="string">@string/changelog_v033_body</item>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v034_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v034_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
@@ -283,6 +288,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v034_title">V0.1.24 Build2608140112</string>
+    <string name="changelog_v034_body">• 官方链接新增少女前线2-追放官方网站入口。\n• 官方链接新增 Steam 少女前线和 Steam 少女前线2：追放入口。\n• 官方链接新增少女前线2-追放微博和微信公众号入口。\n• 优化官方链接的 App 跳转体验，优先尝试打开对应 App，无法打开时自动回退到网页。\n• 优化更新下载进度弹窗的文字对比度，提升半透明弹窗下的可读性。</string>
     <string name="changelog_v033_title">V0.1.23 Build2608140044</string>
     <string name="changelog_v033_body">• 自动兑换资源支持设置每日目标兑换数量，可按资源限购情况选择兑换 1 个或多个。\n• 自动兑换结果通知优化，能区分已兑换部分数量、积分不足、限购已满等情况。\n• “官方周边”调整为“官方链接”，集中收纳官方店铺、BiliBili、微博和微信公众号入口。\n• 官方链接支持优先尝试打开对应 App，无法打开时自动回退到网页。\n• 官方链接列表新增入口图标，视觉层级更清晰。</string>
     <string name="changelog_v032_title">V0.1.22 Build2608132336</string>

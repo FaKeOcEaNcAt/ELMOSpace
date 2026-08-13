@@ -45,7 +45,12 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/SettingsSectionTitle" android:text="@string/changelog_v033_title" />
+            <TextView style="@style/SettingsSectionTitle" android:text="@string/changelog_v034_title" />
+            <LinearLayout style="@style/SettingsCard" android:padding="18dp">
+                <TextView style="@style/AboutParagraph" android:text="@string/changelog_v034_body" />
+            </LinearLayout>
+
+            <TextView style="@style/SettingsSectionTitle" android:layout_marginTop="22dp" android:text="@string/changelog_v033_title" />
             <LinearLayout style="@style/SettingsCard" android:padding="18dp">
                 <TextView style="@style/AboutParagraph" android:text="@string/changelog_v033_body" />
             </LinearLayout>
