@@ -1516,6 +1516,29 @@
                     </LinearLayout>
                     <View style="@style/SettingsDivider" />
                     <LinearLayout
+                        android:id="@+id/updateDownloadModeRow"
+                        style="@style/SettingsRow">
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/update_download_mode" />
+                        <TextView
+                            android:id="@+id/updateDownloadModeValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/nav_selected"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        style="@style/SettingsRowSummary"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="16dp"
+                        android:text="@string/update_download_mode_summary" />
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
                         android:id="@+id/checkUpdateRow"
                         style="@style/SettingsRow">
                         <LinearLayout

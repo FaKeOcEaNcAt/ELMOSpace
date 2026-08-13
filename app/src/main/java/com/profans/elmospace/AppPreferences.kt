@@ -39,6 +39,7 @@ object AppPreferences {
     private const val KEY_STARTUP_UPDATE_CHECKS_PER_DAY = "startup_update_checks_per_day"
     private const val KEY_STARTUP_UPDATE_CHECK_DATE = "startup_update_check_date"
     private const val KEY_STARTUP_UPDATE_CHECK_COUNT = "startup_update_check_count"
+    private const val KEY_UPDATE_DOWNLOAD_MODE = "update_download_mode"
     private const val KEY_IGNORED_UPDATE_VERSION_CODE = "ignored_update_version_code"
     private const val KEY_REMIND_UPDATE_NEXT_STARTUP_VERSION_CODE =
         "remind_update_next_startup_version_code"
@@ -51,6 +52,9 @@ object AppPreferences {
     const val ACCENT_COLOR_WHEEL = 1
     const val ACCENT_COLOR_HEX = 2
     const val ACCENT_COLOR_RGB = 3
+
+    const val UPDATE_DOWNLOAD_MODE_BUILT_IN = 0
+    const val UPDATE_DOWNLOAD_MODE_BROWSER = 1
 
     private fun preferences(context: Context) =
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -296,6 +300,19 @@ object AppPreferences {
     fun setStartupUpdateChecksPerDay(context: Context, count: Int) {
         preferences(context).edit()
             .putInt(KEY_STARTUP_UPDATE_CHECKS_PER_DAY, count.coerceIn(1, 3))
+            .apply()
+    }
+
+    fun getUpdateDownloadMode(context: Context) =
+        preferences(context).getInt(KEY_UPDATE_DOWNLOAD_MODE, UPDATE_DOWNLOAD_MODE_BUILT_IN)
+            .coerceIn(UPDATE_DOWNLOAD_MODE_BUILT_IN, UPDATE_DOWNLOAD_MODE_BROWSER)
+
+    fun setUpdateDownloadMode(context: Context, mode: Int) {
+        preferences(context).edit()
+            .putInt(
+                KEY_UPDATE_DOWNLOAD_MODE,
+                mode.coerceIn(UPDATE_DOWNLOAD_MODE_BUILT_IN, UPDATE_DOWNLOAD_MODE_BROWSER)
+            )
             .apply()
     }
 

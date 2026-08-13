@@ -115,6 +115,7 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var startupUpdateCheckSwitch: Switch
     private lateinit var startupUpdateCheckFrequencyRow: LinearLayout
     private lateinit var startupUpdateCheckFrequencyValue: TextView
+    private lateinit var updateDownloadModeValue: TextView
     private var runTestAfterNotificationPermission = false
     private var updatingAccentControls = false
     private var lastAppliedAccentColor: Int? = null
@@ -218,6 +219,7 @@ class SettingsActivity : ComponentActivity() {
         startupUpdateCheckSwitch = findViewById(R.id.startupUpdateCheckSwitch)
         startupUpdateCheckFrequencyRow = findViewById(R.id.startupUpdateCheckFrequencyRow)
         startupUpdateCheckFrequencyValue = findViewById(R.id.startupUpdateCheckFrequencyValue)
+        updateDownloadModeValue = findViewById(R.id.updateDownloadModeValue)
 
         findViewById<View>(R.id.settingsBack).setOnClickListener { handleSettingsBack() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -394,6 +396,9 @@ class SettingsActivity : ComponentActivity() {
         startupUpdateCheckFrequencyRow.setOnClickListener {
             showStartupUpdateCheckFrequencyPicker()
         }
+        findViewById<View>(R.id.updateDownloadModeRow).setOnClickListener {
+            showUpdateDownloadModePicker()
+        }
         findViewById<View>(R.id.checkUpdateRow).setOnClickListener {
             checkUpdateManually()
         }
@@ -424,6 +429,7 @@ class SettingsActivity : ComponentActivity() {
         updateLikeEffectSizeValue()
         updateLikeEffectVisibility(enhancedLikeSwitch.isChecked)
         updateStartupUpdateCheckUi()
+        updateUpdateDownloadModeValue()
         updatePermissionStatuses()
         updateCacheSize()
         updateStorageSpace()
@@ -800,6 +806,38 @@ class SettingsActivity : ComponentActivity() {
         val enabled = startupUpdateCheckSwitch.isChecked
         startupUpdateCheckFrequencyRow.isEnabled = enabled
         startupUpdateCheckFrequencyRow.alpha = if (enabled) 1f else 0.45f
+    }
+
+    private fun showUpdateDownloadModePicker() {
+        val modes = intArrayOf(
+            AppPreferences.UPDATE_DOWNLOAD_MODE_BUILT_IN,
+            AppPreferences.UPDATE_DOWNLOAD_MODE_BROWSER
+        )
+        val labels = arrayOf(
+            getString(R.string.update_download_mode_builtin),
+            getString(R.string.update_download_mode_browser)
+        )
+        val selectedMode = AppPreferences.getUpdateDownloadMode(this)
+        val selectedIndex = modes.indexOf(selectedMode).coerceAtLeast(0)
+        showModernOptionPicker(
+            titleRes = R.string.update_download_mode,
+            labels = labels,
+            selectedIndex = selectedIndex
+        ) { index ->
+            AppPreferences.setUpdateDownloadMode(this, modes[index])
+            updateUpdateDownloadModeValue()
+        }
+    }
+
+    private fun updateUpdateDownloadModeValue() {
+        updateDownloadModeValue.setText(
+            when (AppPreferences.getUpdateDownloadMode(this)) {
+                AppPreferences.UPDATE_DOWNLOAD_MODE_BROWSER ->
+                    R.string.update_download_mode_browser_short
+                else -> R.string.update_download_mode_builtin_short
+            }
+        )
+        updateDownloadModeValue.setTextColor(AppAccentColor.color(this))
     }
 
     private fun checkUpdateManually() {
@@ -1226,6 +1264,22 @@ class SettingsActivity : ComponentActivity() {
         dialog.window?.setLayout(
             resources.displayMetrics.widthPixels - margin,
             ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun showModernOptionPicker(
+        @StringRes titleRes: Int,
+        labels: Array<String>,
+        selectedIndex: Int,
+        onConfirm: (Int) -> Unit
+    ) {
+        showModernNumberPicker(
+            titleRes = titleRes,
+            minValue = 0,
+            maxValue = labels.lastIndex,
+            selectedValue = selectedIndex.coerceIn(0, labels.lastIndex),
+            displayedValues = labels,
+            onConfirm = onConfirm
         )
     }
 

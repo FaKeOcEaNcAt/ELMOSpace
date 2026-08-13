@@ -4,15 +4,21 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 object AppUpdateUi {
     private val executor = Executors.newSingleThreadExecutor()
@@ -112,7 +118,7 @@ object AppUpdateUi {
             setTextColor(AppAccentColor.color(activity))
             setOnClickListener {
                 dialog.dismiss()
-                ensureInstallPermissionThenDownload(activity, info)
+                startSelectedUpdateFlow(activity, info)
             }
         }
         view.findViewById<TextView>(R.id.remindNextStartupButton).setOnClickListener {
@@ -124,6 +130,63 @@ object AppUpdateUi {
             dialog.dismiss()
         }
         dialog.show()
+    }
+
+    private fun startSelectedUpdateFlow(activity: Activity, info: AppUpdateManager.ReleaseInfo) {
+        confirmMobileDataIfNeeded(activity, info) {
+            when (AppPreferences.getUpdateDownloadMode(activity)) {
+                AppPreferences.UPDATE_DOWNLOAD_MODE_BROWSER -> openBrowserDownload(activity, info)
+                else -> ensureInstallPermissionThenDownload(activity, info)
+            }
+        }
+    }
+
+    private fun confirmMobileDataIfNeeded(
+        activity: Activity,
+        info: AppUpdateManager.ReleaseInfo,
+        onContinue: () -> Unit
+    ) {
+        if (!isUsingCellularNetwork(activity)) {
+            onContinue()
+            return
+        }
+        val sizeText = if (info.apkSize > 0L) {
+            formatBytes(info.apkSize)
+        } else {
+            activity.getString(R.string.update_package_size_unknown)
+        }
+        AlertDialog.Builder(activity)
+            .setMessage(activity.getString(R.string.update_mobile_data_confirm, sizeText))
+            .setPositiveButton(R.string.update_mobile_data_continue) { _, _ -> onContinue() }
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
+            .also { tintDialogButtons(it, activity) }
+    }
+
+    private fun isUsingCellularNetwork(activity: Activity): Boolean {
+        val manager = activity.getSystemService(ConnectivityManager::class.java) ?: return false
+        val activeNetwork = manager.activeNetwork ?: return false
+        val capabilities = manager.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+    }
+
+    private fun openBrowserDownload(activity: Activity, info: AppUpdateManager.ReleaseInfo) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.apkDownloadUrl))
+        try {
+            activity.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(
+                activity,
+                R.string.open_browser_download_failed,
+                Toast.LENGTH_LONG
+            ).show()
+        } catch (_: SecurityException) {
+            Toast.makeText(
+                activity,
+                R.string.open_browser_download_failed,
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     private fun ensureInstallPermissionThenDownload(
@@ -177,6 +240,8 @@ object AppUpdateUi {
         val title = view.findViewById<TextView>(R.id.updateProgressTitle)
         val message = view.findViewById<TextView>(R.id.updateProgressMessage)
         val progress = view.findViewById<ProgressBar>(R.id.updateProgressBar)
+        val slowTip = view.findViewById<TextView>(R.id.updateSlowTip)
+        val cancelButton = view.findViewById<TextView>(R.id.updateCancelButton)
         AppAccentColor.tintProgress(progress, activity)
         progress.isIndeterminate = info.apkSize <= 0L
         message.text = activity.getString(R.string.downloading_update)
@@ -185,9 +250,30 @@ object AppUpdateUi {
             .create()
         dialog.setCancelable(false)
         dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val canceled = AtomicBoolean(false)
+        val handler = Handler(Looper.getMainLooper())
+        val showSlowTip = Runnable {
+            if (!activity.isFinishing && !activity.isDestroyed && dialog.isShowing) {
+                slowTip.visibility = View.VISIBLE
+            }
+        }
+        handler.postDelayed(showSlowTip, SLOW_DOWNLOAD_TIP_DELAY_MS)
+        cancelButton.setTextColor(AppAccentColor.color(activity))
+        cancelButton.setOnClickListener {
+            canceled.set(true)
+            handler.removeCallbacks(showSlowTip)
+            cancelButton.isEnabled = false
+            message.setText(R.string.canceling_update_download)
+        }
 
         executor.execute {
-            val result = AppUpdateManager.downloadAndVerify(activity.applicationContext, info) {
+            val result = AppUpdateManager.downloadAndVerify(
+                activity.applicationContext,
+                info,
+                isCanceled = { canceled.get() }
+            ) {
                     downloaded,
                     total ->
                 activity.runOnUiThread {
@@ -208,6 +294,7 @@ object AppUpdateUi {
             }
             activity.runOnUiThread {
                 if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                handler.removeCallbacks(showSlowTip)
                 when (result) {
                     is AppUpdateManager.DownloadResult.Success -> {
                         title.setText(R.string.verifying_update_package)
@@ -219,6 +306,14 @@ object AppUpdateUi {
                     is AppUpdateManager.DownloadResult.Failure -> {
                         dialog.dismiss()
                         Toast.makeText(activity, result.message, Toast.LENGTH_LONG).show()
+                    }
+                    AppUpdateManager.DownloadResult.Canceled -> {
+                        dialog.dismiss()
+                        Toast.makeText(
+                            activity,
+                            R.string.update_download_canceled,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -271,4 +366,6 @@ object AppUpdateUi {
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
     }
+
+    private const val SLOW_DOWNLOAD_TIP_DELAY_MS = 30_000L
 }

@@ -223,7 +223,7 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.21 Build2608132235</string>
+    <string name="version_display">V0.1.22 Build2608132336</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
@@ -236,13 +236,19 @@
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="current_version_changelog_section">当前版本更新日志</string>
-    <item name="current_version_changelog_title" type="string">@string/changelog_v031_title</item>
-    <item name="current_version_changelog_body" type="string">@string/changelog_v031_body</item>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v032_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v032_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
     <string name="startup_update_check_frequency_summary">仅统计启动自动检查，不统计每日自动签到和兑换</string>
     <string name="startup_update_check_frequency_value">%1$d 次/天</string>
+    <string name="update_download_mode">切换更新模式</string>
+    <string name="update_download_mode_builtin">使用App内置下载器</string>
+    <string name="update_download_mode_browser">使用浏览器下载更新</string>
+    <string name="update_download_mode_builtin_short">内置下载器</string>
+    <string name="update_download_mode_browser_short">浏览器下载</string>
+    <string name="update_download_mode_summary">使用App内置下载器可能需要给予App安装未知应用的权限，此权限只会用于更新App，不存在滥用行为，且使用App内置下载器时，App会校验下载后的Apk文件，以防文件被篡改成恶意文件；如果你依旧顾虑权限问题，可以使用浏览器下载更新模式，相比使用App内置下载器，使用浏览器下载会跳转到系统默认浏览器下载，由你信任的浏览器调用安装包管理器安装。浏览器模式下App无法校验下载后文件的SHA256，请只从GitHub Release页面继续安装。</string>
     <string name="check_update">检查更新</string>
     <string name="check_update_summary">立即从 GitHub Release 获取最新版本信息</string>
     <string name="checking_update">正在检查更新…</string>
@@ -256,6 +262,13 @@
     <string name="ignore_this_update">忽略本次更新</string>
     <string name="downloading_update">正在下载更新</string>
     <string name="download_update_progress">已下载 %1$s / %2$s</string>
+    <string name="update_package_size_unknown">约10MB</string>
+    <string name="update_mobile_data_confirm">当前正在使用行动网络状态，是否继续下载？(安装包%1$s)</string>
+    <string name="update_mobile_data_continue">继续下载</string>
+    <string name="update_slow_download_tip">Tips:下载缓慢可以尝试使用行动网络(4G/5G)，改善Github直连下载的速度，或者使用代理软件开启全局模式(因为App处于非代理白名单中)下载</string>
+    <string name="canceling_update_download">正在取消下载…</string>
+    <string name="update_download_canceled">已取消下载更新</string>
+    <string name="open_browser_download_failed">无法打开浏览器下载链接，请手动前往 GitHub Release 下载</string>
     <string name="verifying_update_package">正在校验安装包…</string>
     <string name="update_install_permission_title">需要允许安装此来源的应用</string>
     <string name="update_install_permission_message">此权限仅用于安装从 ElmoSpace GitHub Release 下载的新版 App。安装过程仍由 Android 系统安装器完成，需要你手动确认。</string>
@@ -263,6 +276,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v032_title">V0.1.22 Build2608132336</string>
+    <string name="changelog_v032_body">• 版本更新新增下载模式切换，可选择使用App内置下载器或浏览器下载更新。\n• 使用浏览器下载更新时会跳转到系统默认浏览器打开安装包下载链接。\n• 使用移动网络下载更新前新增确认提示，避免误用流量下载安装包。\n• App内置下载器的下载进度弹窗新增取消按钮。\n• 更新下载持续较久时会显示网络改善提示，方便根据当前网络环境调整下载方式。\n• 优化“切换更新模式”设置项排版，避免选项文字被挤压或显示不完整。</string>
     <string name="changelog_v031_title">V0.1.21 Build2608132235</string>
     <string name="changelog_v031_body">• 设置一级菜单改为双列图标布局，模块入口更直观。\n• 一级菜单图标支持跟随 App 强调色变化。\n• 新增“官方周边”入口，可跳转《少女前线》天猫官方店。\n• 版本页新增“当前版本更新日志”模块，方便查看当前版本变化。\n• 修复切换深色模式后强调色选项错误显示为自定义 RGB 的问题。\n• 修复“关于”页 App 图标被强调色误染的问题。</string>
     <string name="changelog_v030_title">V0.1.20 Build2608132019</string>

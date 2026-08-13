@@ -57,6 +57,7 @@ object AppUpdateManager {
     fun downloadAndVerify(
         context: Context,
         info: ReleaseInfo,
+        isCanceled: () -> Boolean = { false },
         onProgress: (downloaded: Long, total: Long) -> Unit
     ): DownloadResult {
         val updateDir = File(context.cacheDir, UPDATE_CACHE_DIR).apply { mkdirs() }
@@ -64,6 +65,8 @@ object AppUpdateManager {
         val temp = File(updateDir, "${info.apkName}.download")
         if (temp.exists()) temp.delete()
         if (target.exists()) target.delete()
+
+        if (isCanceled()) return DownloadResult.Canceled
 
         val connection = (URL(info.apkDownloadUrl).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
@@ -83,6 +86,10 @@ object AppUpdateManager {
                 temp.outputStream().use { output ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                     while (true) {
+                        if (isCanceled()) {
+                            temp.delete()
+                            return DownloadResult.Canceled
+                        }
                         val read = input.read(buffer)
                         if (read < 0) break
                         output.write(buffer, 0, read)
@@ -109,6 +116,7 @@ object AppUpdateManager {
         } catch (error: Exception) {
             temp.delete()
             target.delete()
+            if (isCanceled()) return DownloadResult.Canceled
             return DownloadResult.Failure(error.message ?: "下载更新失败，请稍后重试")
         } finally {
             connection.disconnect()
@@ -257,5 +265,6 @@ object AppUpdateManager {
     sealed class DownloadResult {
         data class Success(val file: File, val uri: Uri) : DownloadResult()
         data class Failure(val message: String) : DownloadResult()
+        data object Canceled : DownloadResult()
     }
 }
