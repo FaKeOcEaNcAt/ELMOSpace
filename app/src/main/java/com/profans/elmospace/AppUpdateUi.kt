@@ -18,7 +18,6 @@ import android.widget.TextView
 import android.widget.Toast
 import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 object AppUpdateUi {
     private val executor = Executors.newSingleThreadExecutor()
@@ -252,7 +251,7 @@ object AppUpdateUi {
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        val canceled = AtomicBoolean(false)
+        val cancelToken = AppUpdateManager.DownloadCancelToken()
         val handler = Handler(Looper.getMainLooper())
         val showSlowTip = Runnable {
             if (!activity.isFinishing && !activity.isDestroyed && dialog.isShowing) {
@@ -262,7 +261,7 @@ object AppUpdateUi {
         handler.postDelayed(showSlowTip, SLOW_DOWNLOAD_TIP_DELAY_MS)
         cancelButton.setTextColor(AppAccentColor.color(activity))
         cancelButton.setOnClickListener {
-            canceled.set(true)
+            cancelToken.cancel()
             handler.removeCallbacks(showSlowTip)
             cancelButton.isEnabled = false
             message.setText(R.string.canceling_update_download)
@@ -272,7 +271,7 @@ object AppUpdateUi {
             val result = AppUpdateManager.downloadAndVerify(
                 activity.applicationContext,
                 info,
-                isCanceled = { canceled.get() }
+                cancelToken = cancelToken
             ) {
                     downloaded,
                     total ->

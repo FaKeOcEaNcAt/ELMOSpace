@@ -8,15 +8,20 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 object AppUpdateManager {
     private const val LATEST_RELEASE_API =
         "https://api.github.com/repos/FaKeOcEaNcAt/ELMOSpace/releases/latest"
     private const val CONNECT_TIMEOUT_MS = 15_000
     private const val READ_TIMEOUT_MS = 30_000
+    private const val DOWNLOAD_READ_TIMEOUT_MS = 300_000
+    private const val DOWNLOAD_MAX_ATTEMPTS = 5
+    private const val DOWNLOAD_RETRY_DELAY_MS = 3_000L
     private const val UPDATE_CACHE_DIR = "app_updates"
 
     fun checkLatest(context: Context): CheckResult {
@@ -57,7 +62,7 @@ object AppUpdateManager {
     fun downloadAndVerify(
         context: Context,
         info: ReleaseInfo,
-        isCanceled: () -> Boolean = { false },
+        cancelToken: DownloadCancelToken = DownloadCancelToken(),
         onProgress: (downloaded: Long, total: Long) -> Unit
     ): DownloadResult {
         val updateDir = File(context.cacheDir, UPDATE_CACHE_DIR).apply { mkdirs() }
@@ -66,19 +71,50 @@ object AppUpdateManager {
         if (temp.exists()) temp.delete()
         if (target.exists()) target.delete()
 
-        if (isCanceled()) return DownloadResult.Canceled
+        if (cancelToken.isCanceled()) return DownloadResult.Canceled
 
-        val connection = (URL(info.apkDownloadUrl).openConnection() as HttpURLConnection).apply {
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            requestMethod = "GET"
-            setRequestProperty("Accept", "application/octet-stream")
-            setRequestProperty("User-Agent", "ELMOSpace-Android")
-            connect()
+        var lastFailure: DownloadResult.Failure? = null
+        for (attempt in 1..DOWNLOAD_MAX_ATTEMPTS) {
+            if (temp.exists()) temp.delete()
+            if (cancelToken.isCanceled()) return DownloadResult.Canceled
+
+            when (val attemptResult = downloadAndVerifyOnce(context, info, temp, target, cancelToken, onProgress)) {
+                is DownloadAttemptResult.Done -> return attemptResult.result
+                is DownloadAttemptResult.RetryableFailure -> {
+                    lastFailure = attemptResult.failure
+                    if (attempt >= DOWNLOAD_MAX_ATTEMPTS) return attemptResult.failure
+                    if (!sleepBeforeRetry(cancelToken)) return DownloadResult.Canceled
+                }
+            }
         }
+        return lastFailure ?: DownloadResult.Failure("下载更新失败，请稍后重试")
+    }
+
+    private fun downloadAndVerifyOnce(
+        context: Context,
+        info: ReleaseInfo,
+        temp: File,
+        target: File,
+        cancelToken: DownloadCancelToken,
+        onProgress: (downloaded: Long, total: Long) -> Unit
+    ): DownloadAttemptResult {
+        var connection: HttpURLConnection? = null
         try {
+            connection = URL(info.apkDownloadUrl).openConnection() as HttpURLConnection
+            cancelToken.attach(connection)
+            connection.apply {
+                connectTimeout = CONNECT_TIMEOUT_MS
+                readTimeout = DOWNLOAD_READ_TIMEOUT_MS
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/octet-stream")
+                setRequestProperty("User-Agent", "ELMOSpace-Android")
+                connect()
+            }
             if (connection.responseCode !in 200..299) {
-                return DownloadResult.Failure("下载更新失败，请稍后重试")
+                temp.delete()
+                return DownloadAttemptResult.RetryableFailure(
+                    DownloadResult.Failure("连接下载服务器失败，正在重试")
+                )
             }
             val total = connection.contentLengthLong.takeIf { it > 0L } ?: info.apkSize
             var downloaded = 0L
@@ -86,9 +122,9 @@ object AppUpdateManager {
                 temp.outputStream().use { output ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                     while (true) {
-                        if (isCanceled()) {
+                        if (cancelToken.isCanceled()) {
                             temp.delete()
-                            return DownloadResult.Canceled
+                            return DownloadAttemptResult.Done(DownloadResult.Canceled)
                         }
                         val read = input.read(buffer)
                         if (read < 0) break
@@ -101,7 +137,9 @@ object AppUpdateManager {
             val actualSha256 = sha256(temp)
             if (!actualSha256.equals(info.sha256, ignoreCase = true)) {
                 temp.delete()
-                return DownloadResult.Failure("安装包校验失败，请稍后重试")
+                return DownloadAttemptResult.Done(
+                    DownloadResult.Failure("安装包校验失败，请稍后重试")
+                )
             }
             if (!temp.renameTo(target)) {
                 temp.copyTo(target, overwrite = true)
@@ -112,15 +150,35 @@ object AppUpdateManager {
                 "${context.packageName}.fileprovider",
                 target
             )
-            return DownloadResult.Success(target, uri)
+            return DownloadAttemptResult.Done(DownloadResult.Success(target, uri))
+        } catch (_: SocketTimeoutException) {
+            temp.delete()
+            target.delete()
+            if (cancelToken.isCanceled()) return DownloadAttemptResult.Done(DownloadResult.Canceled)
+            return DownloadAttemptResult.RetryableFailure(
+                DownloadResult.Failure("下载超时，请检查网络或切换下载方式")
+            )
         } catch (error: Exception) {
             temp.delete()
             target.delete()
-            if (isCanceled()) return DownloadResult.Canceled
-            return DownloadResult.Failure(error.message ?: "下载更新失败，请稍后重试")
+            if (cancelToken.isCanceled()) return DownloadAttemptResult.Done(DownloadResult.Canceled)
+            return DownloadAttemptResult.RetryableFailure(
+                DownloadResult.Failure(error.message ?: "下载更新失败，请稍后重试")
+            )
         } finally {
-            connection.disconnect()
+            connection?.disconnect()
+            cancelToken.detach(connection)
         }
+    }
+
+    private fun sleepBeforeRetry(cancelToken: DownloadCancelToken): Boolean {
+        var elapsed = 0L
+        while (elapsed < DOWNLOAD_RETRY_DELAY_MS) {
+            if (cancelToken.isCanceled()) return false
+            Thread.sleep(250L)
+            elapsed += 250L
+        }
+        return !cancelToken.isCanceled()
     }
 
     fun clearCachedUpdates(context: Context) {
@@ -266,5 +324,34 @@ object AppUpdateManager {
         data class Success(val file: File, val uri: Uri) : DownloadResult()
         data class Failure(val message: String) : DownloadResult()
         data object Canceled : DownloadResult()
+    }
+
+    class DownloadCancelToken {
+        private val canceled = AtomicBoolean(false)
+        @Volatile
+        private var connection: HttpURLConnection? = null
+
+        fun cancel() {
+            canceled.set(true)
+            connection?.disconnect()
+        }
+
+        fun isCanceled(): Boolean = canceled.get()
+
+        internal fun attach(connection: HttpURLConnection?) {
+            this.connection = connection
+            if (isCanceled()) connection?.disconnect()
+        }
+
+        internal fun detach(connection: HttpURLConnection?) {
+            if (this.connection === connection) {
+                this.connection = null
+            }
+        }
+    }
+
+    private sealed class DownloadAttemptResult {
+        data class Done(val result: DownloadResult) : DownloadAttemptResult()
+        data class RetryableFailure(val failure: DownloadResult.Failure) : DownloadAttemptResult()
     }
 }
