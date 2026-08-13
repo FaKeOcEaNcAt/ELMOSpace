@@ -145,6 +145,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             showMobileDataWarningIfNeeded()
             checkDeviceSecurityEnvironment()
+            AppUpdateUi.maybeCheckOnStartup(this)
         }
 
         selectedTab = savedInstanceState?.getInt(STATE_SELECTED_TAB, TAB_HOME) ?: TAB_HOME
@@ -221,6 +222,7 @@ class MainActivity : ComponentActivity() {
         }
         openingNativeSettings = false
         openingBrowsingHistory = false
+        AppUpdateUi.resumePendingInstallIfAllowed(this)
         if (::webView.isInitialized) {
             applyAccentColor()
             injectDarkModeStyles(webView.url)

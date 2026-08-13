@@ -41,6 +41,7 @@ google-services.json
 
 # Kotlin / local build caches
 .kotlin/
+.gradle-user-home/
 
 # Codex / local agent workspace state
 .agents/
@@ -48,6 +49,8 @@ google-services.json
 
 # Local diagnostics, screenshots, recordings, and ADB/logcat captures
 _diagnostics/
+thread_bottom_*.png
+_current_app_detail_scan.js
 *.mp4
 *.webm
 
@@ -64,6 +67,7 @@ WebFrame.md
 UpdateSystemDesign.md
 
 # Temporary and backup files
+release/
 *.tmp
 *.bak
 *.orig

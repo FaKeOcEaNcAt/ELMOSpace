@@ -3,4 +3,7 @@
     <cache-path
         name="webview_uploads"
         path="webview_uploads/" />
+    <cache-path
+        name="app_updates"
+        path="app_updates/" />
 </paths>

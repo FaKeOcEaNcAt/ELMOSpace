@@ -111,6 +111,9 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var exactAlarmPermissionStatus: TextView
     private lateinit var cameraPermissionStatus: TextView
     private lateinit var locationPermissionStatus: TextView
+    private lateinit var startupUpdateCheckSwitch: Switch
+    private lateinit var startupUpdateCheckFrequencyRow: LinearLayout
+    private lateinit var startupUpdateCheckFrequencyValue: TextView
     private var runTestAfterNotificationPermission = false
     private var updatingAccentControls = false
     private var lastAppliedAccentColor: Int? = null
@@ -211,6 +214,9 @@ class SettingsActivity : ComponentActivity() {
         exactAlarmPermissionStatus = findViewById(R.id.exactAlarmPermissionStatus)
         cameraPermissionStatus = findViewById(R.id.cameraPermissionStatus)
         locationPermissionStatus = findViewById(R.id.locationPermissionStatus)
+        startupUpdateCheckSwitch = findViewById(R.id.startupUpdateCheckSwitch)
+        startupUpdateCheckFrequencyRow = findViewById(R.id.startupUpdateCheckFrequencyRow)
+        startupUpdateCheckFrequencyValue = findViewById(R.id.startupUpdateCheckFrequencyValue)
 
         findViewById<View>(R.id.settingsBack).setOnClickListener { handleSettingsBack() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -376,6 +382,20 @@ class SettingsActivity : ComponentActivity() {
         likeEffectSizeRow.setOnClickListener { showLikeEffectSizePicker() }
         likeEffectPreviewRow.setOnClickListener { toggleLikeEffectPreview() }
         likeEffectPreviewButton.setOnClickListener { toggleLikeEffectPreview() }
+        startupUpdateCheckSwitch.isChecked = AppPreferences.isStartupUpdateCheckEnabled(this)
+        startupUpdateCheckSwitch.setOnCheckedChangeListener { _, checked ->
+            AppPreferences.setStartupUpdateCheckEnabled(this, checked)
+            updateStartupUpdateCheckUi()
+        }
+        findViewById<View>(R.id.startupUpdateCheckRow).setOnClickListener {
+            startupUpdateCheckSwitch.isChecked = !startupUpdateCheckSwitch.isChecked
+        }
+        startupUpdateCheckFrequencyRow.setOnClickListener {
+            showStartupUpdateCheckFrequencyPicker()
+        }
+        findViewById<View>(R.id.checkUpdateRow).setOnClickListener {
+            checkUpdateManually()
+        }
         findViewById<View>(R.id.changelogRow).setOnClickListener { openChangelog() }
 
         findViewById<View>(R.id.clearCacheRow).setOnClickListener { clearWebCache() }
@@ -402,6 +422,7 @@ class SettingsActivity : ComponentActivity() {
         updateLikeEffectDurationValue()
         updateLikeEffectSizeValue()
         updateLikeEffectVisibility(enhancedLikeSwitch.isChecked)
+        updateStartupUpdateCheckUi()
         updatePermissionStatuses()
         updateCacheSize()
         updateStorageSpace()
@@ -433,6 +454,7 @@ class SettingsActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        AppUpdateUi.resumePendingInstallIfAllowed(this)
         if (AppPreferences.isScheduledSignInEnabled(this)) {
             SignInScheduler.scheduleNext(this)
         }
@@ -747,6 +769,37 @@ class SettingsActivity : ComponentActivity() {
             R.string.preload_screen_value,
             AppPreferences.getFeedPreloadScreens(this)
         )
+    }
+
+    private fun showStartupUpdateCheckFrequencyPicker() {
+        if (!startupUpdateCheckFrequencyRow.isEnabled) return
+        val labels = Array(3) { index ->
+            getString(R.string.startup_update_check_frequency_value, index + 1)
+        }
+        showModernNumberPicker(
+            titleRes = R.string.startup_update_check_frequency,
+            minValue = 1,
+            maxValue = 3,
+            selectedValue = AppPreferences.getStartupUpdateChecksPerDay(this),
+            displayedValues = labels
+        ) { value ->
+            AppPreferences.setStartupUpdateChecksPerDay(this, value)
+            updateStartupUpdateCheckUi()
+        }
+    }
+
+    private fun updateStartupUpdateCheckUi() {
+        startupUpdateCheckFrequencyValue.text = getString(
+            R.string.startup_update_check_frequency_value,
+            AppPreferences.getStartupUpdateChecksPerDay(this)
+        )
+        val enabled = startupUpdateCheckSwitch.isChecked
+        startupUpdateCheckFrequencyRow.isEnabled = enabled
+        startupUpdateCheckFrequencyRow.alpha = if (enabled) 1f else 0.45f
+    }
+
+    private fun checkUpdateManually() {
+        AppUpdateUi.checkForUpdate(this, manual = true)
     }
 
     private fun updatePreloadEnabledState(enabled: Boolean) {

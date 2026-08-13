@@ -1,6 +1,9 @@
 package com.profans.elmospace
 
 import android.content.Context
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object AppPreferences {
     private const val FILE_NAME = "app_settings"
@@ -32,6 +35,13 @@ object AppPreferences {
     private const val KEY_LIKE_EFFECT_SIZE_MULTIPLIER = "like_effect_size_multiplier"
     private const val KEY_LIKE_EFFECT_ON_UNLIKE = "like_effect_on_unlike"
     private const val KEY_DEVICE_SECURITY_CHECK = "device_security_check"
+    private const val KEY_STARTUP_UPDATE_CHECK = "startup_update_check"
+    private const val KEY_STARTUP_UPDATE_CHECKS_PER_DAY = "startup_update_checks_per_day"
+    private const val KEY_STARTUP_UPDATE_CHECK_DATE = "startup_update_check_date"
+    private const val KEY_STARTUP_UPDATE_CHECK_COUNT = "startup_update_check_count"
+    private const val KEY_IGNORED_UPDATE_VERSION_CODE = "ignored_update_version_code"
+    private const val KEY_REMIND_UPDATE_NEXT_STARTUP_VERSION_CODE =
+        "remind_update_next_startup_version_code"
 
     const val DARK_MODE_FOLLOW_SYSTEM = 0
     const val DARK_MODE_OFF = 1
@@ -270,4 +280,80 @@ object AppPreferences {
             .putBoolean(KEY_DEVICE_SECURITY_CHECK, enabled)
             .apply()
     }
+
+    fun isStartupUpdateCheckEnabled(context: Context) =
+        preferences(context).getBoolean(KEY_STARTUP_UPDATE_CHECK, false)
+
+    fun setStartupUpdateCheckEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit()
+            .putBoolean(KEY_STARTUP_UPDATE_CHECK, enabled)
+            .apply()
+    }
+
+    fun getStartupUpdateChecksPerDay(context: Context) =
+        preferences(context).getInt(KEY_STARTUP_UPDATE_CHECKS_PER_DAY, 1).coerceIn(1, 3)
+
+    fun setStartupUpdateChecksPerDay(context: Context, count: Int) {
+        preferences(context).edit()
+            .putInt(KEY_STARTUP_UPDATE_CHECKS_PER_DAY, count.coerceIn(1, 3))
+            .apply()
+    }
+
+    fun canConsumeStartupUpdateCheck(context: Context): Boolean {
+        val prefs = preferences(context)
+        val today = todayKey()
+        val savedDate = prefs.getString(KEY_STARTUP_UPDATE_CHECK_DATE, null)
+        val currentCount = if (savedDate == today) {
+            prefs.getInt(KEY_STARTUP_UPDATE_CHECK_COUNT, 0)
+        } else {
+            0
+        }
+        return currentCount < getStartupUpdateChecksPerDay(context)
+    }
+
+    fun consumeStartupUpdateCheck(context: Context): Boolean {
+        if (consumeRemindUpdateNextStartup(context)) return true
+        if (!canConsumeStartupUpdateCheck(context)) return false
+        val prefs = preferences(context)
+        val today = todayKey()
+        val savedDate = prefs.getString(KEY_STARTUP_UPDATE_CHECK_DATE, null)
+        val currentCount = if (savedDate == today) {
+            prefs.getInt(KEY_STARTUP_UPDATE_CHECK_COUNT, 0)
+        } else {
+            0
+        }
+        prefs.edit()
+            .putString(KEY_STARTUP_UPDATE_CHECK_DATE, today)
+            .putInt(KEY_STARTUP_UPDATE_CHECK_COUNT, currentCount + 1)
+            .apply()
+        return true
+    }
+
+    fun getIgnoredUpdateVersionCode(context: Context) =
+        preferences(context).getInt(KEY_IGNORED_UPDATE_VERSION_CODE, 0)
+
+    fun setIgnoredUpdateVersionCode(context: Context, versionCode: Int) {
+        preferences(context).edit()
+            .putInt(KEY_IGNORED_UPDATE_VERSION_CODE, versionCode.coerceAtLeast(0))
+            .apply()
+    }
+
+    fun remindUpdateNextStartup(context: Context, versionCode: Int) {
+        preferences(context).edit()
+            .putInt(KEY_REMIND_UPDATE_NEXT_STARTUP_VERSION_CODE, versionCode.coerceAtLeast(0))
+            .apply()
+    }
+
+    private fun consumeRemindUpdateNextStartup(context: Context): Boolean {
+        val prefs = preferences(context)
+        val versionCode = prefs.getInt(KEY_REMIND_UPDATE_NEXT_STARTUP_VERSION_CODE, 0)
+        if (versionCode <= 0) return false
+        prefs.edit()
+            .remove(KEY_REMIND_UPDATE_NEXT_STARTUP_VERSION_CODE)
+            .apply()
+        return true
+    }
+
+    private fun todayKey(): String =
+        SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
 }
