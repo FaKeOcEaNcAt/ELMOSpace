@@ -59,7 +59,12 @@
     <string name="settings_title">设置</string>
     <string name="back_symbol">‹</string>
     <string name="settings_official_section">官方设置</string>
-    <string name="settings_official_store">官方周边</string>
+    <string name="settings_official_links">官方链接</string>
+    <string name="settings_official_store">Tmall官方旗舰店(周边)</string>
+    <string name="official_bilibili_gf">BiliBili少女前线制作组</string>
+    <string name="official_bilibili_gf2">BiliBili少女前线2-追放制作组</string>
+    <string name="official_weibo_gf">Weibo少女前线官方微博</string>
+    <string name="official_wechat_gf">WeChat少女前线订阅号</string>
     <string name="settings_app_section">签到模块</string>
     <string name="settings_storage_section">存储管理</string>
     <string name="history_title">历史记录</string>
@@ -165,6 +170,8 @@
     <string name="auto_exchange_empty">当前没有已同步的兑换资源，请先点击“同步当前限购状态”。</string>
     <string name="auto_exchange_item_meta">消耗 %1$d 积分 · %2$s限购 %3$d/%4$d</string>
     <string name="auto_exchange_priority_value">自动兑换优先级：%1$d</string>
+    <string name="auto_exchange_target_count_title">每日兑换数量</string>
+    <string name="auto_exchange_target_count_value">每日兑换：%1$d个</string>
     <string name="auto_exchange_long_cycle_title">确认加入自动兑换</string>
     <string name="auto_exchange_long_cycle_message">%1$s 是%2$s限购资源，兑换后不可撤销。是否加入自动兑换？</string>
     <string name="sign_in_time">定时签到执行时间</string>
@@ -223,7 +230,7 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.22 Build2608132336</string>
+    <string name="version_display">V0.1.23 Build2608140044</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
@@ -236,8 +243,8 @@
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="current_version_changelog_section">当前版本更新日志</string>
-    <item name="current_version_changelog_title" type="string">@string/changelog_v032_title</item>
-    <item name="current_version_changelog_body" type="string">@string/changelog_v032_body</item>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v033_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v033_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
@@ -276,6 +283,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v033_title">V0.1.23 Build2608140044</string>
+    <string name="changelog_v033_body">• 自动兑换资源支持设置每日目标兑换数量，可按资源限购情况选择兑换 1 个或多个。\n• 自动兑换结果通知优化，能区分已兑换部分数量、积分不足、限购已满等情况。\n• “官方周边”调整为“官方链接”，集中收纳官方店铺、BiliBili、微博和微信公众号入口。\n• 官方链接支持优先尝试打开对应 App，无法打开时自动回退到网页。\n• 官方链接列表新增入口图标，视觉层级更清晰。</string>
     <string name="changelog_v032_title">V0.1.22 Build2608132336</string>
     <string name="changelog_v032_body">• 版本更新新增下载模式切换，可选择使用App内置下载器或浏览器下载更新。\n• 使用浏览器下载更新时会跳转到系统默认浏览器打开安装包下载链接。\n• 使用移动网络下载更新前新增确认提示，避免误用流量下载安装包。\n• App内置下载器的下载进度弹窗新增取消按钮。\n• 更新下载持续较久时会显示网络改善提示，方便根据当前网络环境调整下载方式。\n• 优化“切换更新模式”设置项排版，避免选项文字被挤压或显示不完整。</string>
     <string name="changelog_v031_title">V0.1.21 Build2608132235</string>

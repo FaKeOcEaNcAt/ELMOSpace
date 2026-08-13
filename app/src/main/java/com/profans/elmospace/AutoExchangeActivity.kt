@@ -201,11 +201,63 @@ class AutoExchangeActivity : ComponentActivity() {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         })
+        actionRow.addView(createQuantityButton(item))
         actionRow.addView(createOrderButton("↑") { moveSelected(item.exchangeId, -1) })
         actionRow.addView(createOrderButton("↓") { moveSelected(item.exchangeId, 1) })
         row.addView(actionRow)
 
         return row
+    }
+
+    private fun createQuantityButton(item: ExchangeItem): TextView {
+        val density = resources.displayMetrics.density
+        val maxTarget = maxTargetCount(item)
+        val target = AppPreferences.getAutoExchangeTargetCount(this, item.exchangeId)
+            .coerceIn(1, maxTarget)
+        return TextView(this).apply {
+            text = getString(R.string.auto_exchange_target_count_value, target)
+            gravity = android.view.Gravity.CENTER
+            setTextColor(AppAccentColor.color(this@AutoExchangeActivity))
+            textSize = 12f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            background = ContextCompat.getDrawable(
+                this@AutoExchangeActivity,
+                R.drawable.bg_permission_action
+            )
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                (34 * density).toInt()
+            ).apply { leftMargin = (8 * density).toInt() }
+            setPadding((10 * density).toInt(), 0, (10 * density).toInt(), 0)
+            alpha = if (maxTarget > 1) 1f else 0.56f
+            isEnabled = maxTarget > 1
+            setOnClickListener { showTargetCountPicker(item) }
+        }
+    }
+
+    private fun maxTargetCount(item: ExchangeItem): Int {
+        if (item.cycle != "day") return 1
+        return item.maxExchangeCount.coerceAtLeast(1)
+    }
+
+    private fun showTargetCountPicker(item: ExchangeItem) {
+        val maxTarget = maxTargetCount(item)
+        if (maxTarget <= 1) return
+        val options = Array(maxTarget) { index ->
+            getString(R.string.auto_exchange_target_count_value, index + 1)
+        }
+        val checked = AppPreferences.getAutoExchangeTargetCount(this, item.exchangeId)
+            .coerceIn(1, maxTarget) - 1
+        AlertDialog.Builder(this)
+            .setTitle(R.string.auto_exchange_target_count_title)
+            .setSingleChoiceItems(options, checked) { dialog, index ->
+                AppPreferences.setAutoExchangeTargetCount(this, item.exchangeId, index + 1)
+                dialog.dismiss()
+                render()
+            }
+            .setNegativeButton(R.string.permission_cancel, null)
+            .show()
+            .also { tintDialogButtons(it) }
     }
 
     private fun createOrderButton(textValue: String, onClick: () -> Unit): TextView {
@@ -232,6 +284,16 @@ class AutoExchangeActivity : ComponentActivity() {
             }
             .setNegativeButton(R.string.permission_cancel, null)
             .show()
+            .also { tintDialogButtons(it) }
+    }
+
+    private fun tintDialogButtons(dialog: AlertDialog) {
+        val accent = AppAccentColor.color(this)
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accent)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
+        }
     }
 
     private fun updateSelection(exchangeId: Int, selected: Boolean) {

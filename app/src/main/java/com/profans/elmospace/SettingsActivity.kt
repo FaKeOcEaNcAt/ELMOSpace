@@ -244,6 +244,21 @@ class SettingsActivity : ComponentActivity() {
         findViewById<View>(R.id.aboutAuthorBilibiliRow).setOnClickListener {
             openExternalUrl(AUTHOR_BILIBILI_URL)
         }
+        findViewById<View>(R.id.officialStoreRow).setOnClickListener {
+            openOfficialStore()
+        }
+        findViewById<View>(R.id.officialBilibiliGfRow).setOnClickListener {
+            openBilibiliUser(OFFICIAL_BILIBILI_GF_UID)
+        }
+        findViewById<View>(R.id.officialBilibiliGf2Row).setOnClickListener {
+            openBilibiliUser(OFFICIAL_BILIBILI_GF2_UID)
+        }
+        findViewById<View>(R.id.officialWeiboGfRow).setOnClickListener {
+            openExternalUrl(OFFICIAL_WEIBO_GF_URL)
+        }
+        findViewById<View>(R.id.officialWechatGfRow).setOnClickListener {
+            openWechatOfficialAccount()
+        }
 
         val deviceSecurityCheckSwitch = findViewById<Switch>(R.id.deviceSecurityCheckSwitch)
         deviceSecurityCheckSwitch.isChecked =
@@ -539,7 +554,7 @@ class SettingsActivity : ComponentActivity() {
             showSettingsPage(SettingsPage.STORAGE)
         }
         findViewById<View>(R.id.officialStoreCategoryRow).setOnClickListener {
-            openOfficialStore()
+            showSettingsPage(SettingsPage.OFFICIAL_LINKS)
         }
         findViewById<View>(R.id.aboutCategoryRow).setOnClickListener {
             showSettingsPage(SettingsPage.ABOUT)
@@ -1922,6 +1937,20 @@ class SettingsActivity : ComponentActivity() {
         openExternalUrl(OFFICIAL_STORE_URL)
     }
 
+    private fun openBilibiliUser(uid: Long) {
+        val deepLink = "bilibili://space/$uid"
+        val webUrl = "https://space.bilibili.com/$uid"
+        if (tryOpenPackage(deepLink, BILIBILI_PACKAGE)) return
+        if (tryOpenPackage(webUrl, BILIBILI_PACKAGE)) return
+        openExternalUrl(webUrl)
+    }
+
+    private fun openWechatOfficialAccount() {
+        if (tryOpenPackage(WECHAT_OFFICIAL_ACCOUNT_URL, WECHAT_PACKAGE)) return
+        if (tryOpenPackage(WECHAT_OFFICIAL_ACCOUNTS_DEEP_LINK, WECHAT_PACKAGE)) return
+        openExternalUrl(WECHAT_OFFICIAL_ACCOUNT_URL)
+    }
+
     private fun tryOpenPackage(url: String, packageName: String): Boolean {
         return try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).setPackage(packageName))
@@ -1941,6 +1970,7 @@ class SettingsActivity : ComponentActivity() {
 
     private enum class SettingsPage(@StringRes val titleRes: Int, val viewId: Int) {
         CATEGORIES(R.string.settings_title, R.id.settingsCategoryPage),
+        OFFICIAL_LINKS(R.string.settings_official_links, R.id.officialLinksPage),
         OFFICIAL(R.string.settings_official_section, R.id.officialSettingsPage),
         SECURITY(R.string.settings_security_section, R.id.securitySettingsPage),
         SIGN(R.string.settings_app_section, R.id.signSettingsPage),
@@ -1973,5 +2003,14 @@ class SettingsActivity : ComponentActivity() {
             "tbopen://m.taobao.com/tbopen/index.html?action=ali.open.nav&module=h5&h5Url=https%3A%2F%2Fgirlsfrontline.tmall.com%2F"
         private const val TAOBAO_PACKAGE = "com.taobao.taobao"
         private const val TMALL_PACKAGE = "com.tmall.wireless"
+        private const val BILIBILI_PACKAGE = "tv.danmaku.bili"
+        private const val OFFICIAL_BILIBILI_GF_UID = 32472953L
+        private const val OFFICIAL_BILIBILI_GF2_UID = 697654195L
+        private const val OFFICIAL_WEIBO_GF_URL = "https://weibo.com/u/5611537367"
+        private const val WECHAT_PACKAGE = "com.tencent.mm"
+        private const val WECHAT_OFFICIAL_ACCOUNT_URL =
+            "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI4NjI3OTIyOA%3D%3D&scene=124#wechat_redirect"
+        private const val WECHAT_OFFICIAL_ACCOUNTS_DEEP_LINK =
+            "weixin://dl/officialaccounts"
     }
 }

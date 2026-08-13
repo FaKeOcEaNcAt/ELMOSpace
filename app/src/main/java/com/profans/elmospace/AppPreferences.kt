@@ -1,6 +1,7 @@
 package com.profans.elmospace
 
 import android.content.Context
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -19,6 +20,7 @@ object AppPreferences {
         "scheduled_sign_in_auto_enabled_once"
     private const val KEY_AUTO_EXCHANGE_ENABLED = "auto_exchange_enabled"
     private const val KEY_AUTO_EXCHANGE_SELECTED_IDS = "auto_exchange_selected_ids"
+    private const val KEY_AUTO_EXCHANGE_TARGET_COUNTS = "auto_exchange_target_counts"
     private const val KEY_AUTO_EXCHANGE_RESERVE_SCORE = "auto_exchange_reserve_score"
     private const val KEY_AUTO_EXCHANGE_LAST_SYNC_ITEMS = "auto_exchange_last_sync_items"
     private const val KEY_AUTO_EXCHANGE_LAST_SYNC_TIME = "auto_exchange_last_sync_time"
@@ -144,6 +146,25 @@ object AppPreferences {
     fun setAutoExchangeSelectedIds(context: Context, ids: List<Int>) {
         preferences(context).edit()
             .putString(KEY_AUTO_EXCHANGE_SELECTED_IDS, ids.distinct().joinToString(","))
+            .apply()
+    }
+
+    fun getAutoExchangeTargetCount(context: Context, exchangeId: Int): Int {
+        if (exchangeId <= 0) return 1
+        val json = preferences(context).getString(KEY_AUTO_EXCHANGE_TARGET_COUNTS, null).orEmpty()
+        return runCatching { JSONObject(json).optInt(exchangeId.toString(), 1) }
+            .getOrDefault(1)
+            .coerceAtLeast(1)
+    }
+
+    fun setAutoExchangeTargetCount(context: Context, exchangeId: Int, count: Int) {
+        if (exchangeId <= 0) return
+        val prefs = preferences(context)
+        val source = prefs.getString(KEY_AUTO_EXCHANGE_TARGET_COUNTS, null).orEmpty()
+        val json = runCatching { JSONObject(source) }.getOrDefault(JSONObject())
+        json.put(exchangeId.toString(), count.coerceAtLeast(1))
+        prefs.edit()
+            .putString(KEY_AUTO_EXCHANGE_TARGET_COUNTS, json.toString())
             .apply()
     }
 

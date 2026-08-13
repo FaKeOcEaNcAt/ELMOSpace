@@ -174,11 +174,11 @@
                         style="@style/SettingsCategoryTile">
                         <ImageView
                             style="@style/SettingsCategoryIcon"
-                            android:contentDescription="@string/settings_official_store"
-                            android:src="@drawable/ic_settings_store" />
+                            android:contentDescription="@string/settings_official_links"
+                            android:src="@drawable/ic_settings_link" />
                         <TextView
                             style="@style/SettingsCategoryTitle"
-                            android:text="@string/settings_official_store" />
+                            android:text="@string/settings_official_links" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -204,6 +204,85 @@
                         <TextView
                             style="@style/SettingsCategoryTitle"
                             android:text="@string/about_title" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/officialLinksPage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/SettingsSectionTitle"
+                    android:text="@string/settings_official_links" />
+                <LinearLayout style="@style/SettingsCard">
+                    <LinearLayout
+                        android:id="@+id/officialStoreRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/settings_official_store"
+                            android:src="@drawable/ic_settings_store" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/settings_official_store" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialBilibiliGfRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_bilibili_gf"
+                            android:src="@drawable/ic_official_bilibili" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_bilibili_gf" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialBilibiliGf2Row"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_bilibili_gf2"
+                            android:src="@drawable/ic_official_bilibili" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_bilibili_gf2" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialWeiboGfRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_weibo_gf"
+                            android:src="@drawable/ic_official_weibo" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_weibo_gf" />
+                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
+                    <LinearLayout
+                        android:id="@+id/officialWechatGfRow"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/SettingsRowIcon"
+                            android:contentDescription="@string/official_wechat_gf"
+                            android:src="@drawable/ic_official_wechat" />
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/official_wechat_gf" />
+                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
