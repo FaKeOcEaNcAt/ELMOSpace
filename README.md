@@ -4,12 +4,12 @@
 
 艾莫空间是一个面向 `gf2-bbs.exiliumgf.com` 移动端网页的非官方 Android WebView 客户端，用于改善移动端浏览体验。项目目前仍处于测试阶段，功能、界面和兼容性都可能继续调整。
 
-当前版本：`V0.1.20-Build2608132019`
+当前版本：`V0.1.21-Build2608132235`
 
 最新版本下载：
 
-- [直达最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.20)
-- [直接下载当前版本 APK](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.20/ElmoSpace-Beta-V0.1.20-Build2608132019.apk)
+- [直达最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.21)
+- [直接下载当前版本 APK](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.21/ElmoSpace-Beta-V0.1.21-Build2608132235.apk)
 - [查看全部 Releases](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases)
 
 ## 项目状态
@@ -25,14 +25,14 @@
 
 推荐下载位置：
 
-1. 打开 [最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.20)。
+1. 打开 [最新 Beta 测试版 Release](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/tag/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.19)。
 2. 在页面下方找到 `Assets`。
 3. 下载其中的 `.apk` 安装包。
 4. 在 Android 手机上安装该 APK。
 
 当前版本也可以直接下载：
 
-[ElmoSpace-Beta-V0.1.20-Build2608132019.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.20/ElmoSpace-Beta-V0.1.20-Build2608132019.apk)
+[ElmoSpace-Beta-V0.1.21-Build2608132235.apk](https://github.com/FaKeOcEaNcAt/ELMOSpace/releases/download/Beta%E6%B5%8B%E8%AF%95%E7%89%88V0.1.21/ElmoSpace-Beta-V0.1.21-Build2608132235.apk)
 
 如果你没有使用过 GitHub，可以按下面的方式找：
 
@@ -90,6 +90,11 @@ App 原生层不会主动收集、上传或共享你的个人信息，也不会�
 
 本项目仅用于移动端网页访问体验优化。网页内容、账号服务、社区规则、接口可用性均以官方网站为准。使用本 App 时仍需遵守目标网站的用户协议、社区规则和隐私政策。
 
+## 第三方开源组件与图标
+
+本项目设置界面部分图标使用 [Bootstrap Icons](https://icons.getbootstrap.com/) 进行视觉适配。Bootstrap Icons 采用 [MIT License](https://github.com/twbs/icons/blob/main/LICENSE)，版权归 The Bootstrap Authors 所有。
+
+完整第三方授权说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 ## 开源协议
 
 本项目代码采用 [Apache License 2.0](LICENSE) 开源。

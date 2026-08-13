@@ -59,6 +59,7 @@
     <string name="settings_title">设置</string>
     <string name="back_symbol">‹</string>
     <string name="settings_official_section">官方设置</string>
+    <string name="settings_official_store">官方周边</string>
     <string name="settings_app_section">签到模块</string>
     <string name="settings_storage_section">存储管理</string>
     <string name="history_title">历史记录</string>
@@ -222,18 +223,21 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.20 Build2608132019</string>
+    <string name="version_display">V0.1.21 Build2608132235</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
     <string name="about_github_repo">ElmoSpace GitHub 仓库</string>
     <string name="about_github_releases">GitHub Release</string>
-    <string name="about_github_issues">反馈问题</string>
+    <string name="about_github_issues">在Github上反馈问题</string>
     <string name="about_author_bilibili">作者 BiliBili 账号</string>
     <string name="about_links_section">相关链接</string>
     <string name="version_history_section">版本</string>
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
+    <string name="current_version_changelog_section">当前版本更新日志</string>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v031_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v031_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
@@ -259,6 +263,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v031_title">V0.1.21 Build2608132235</string>
+    <string name="changelog_v031_body">• 设置一级菜单改为双列图标布局，模块入口更直观。\n• 一级菜单图标支持跟随 App 强调色变化。\n• 新增“官方周边”入口，可跳转《少女前线》天猫官方店。\n• 版本页新增“当前版本更新日志”模块，方便查看当前版本变化。\n• 修复切换深色模式后强调色选项错误显示为自定义 RGB 的问题。\n• 修复“关于”页 App 图标被强调色误染的问题。</string>
     <string name="changelog_v030_title">V0.1.20 Build2608132019</string>
     <string name="changelog_v030_body">• 新增版本更新管理，可在“设置-版本”中手动检查 GitHub Release 最新版本。\n• 新增启动时检查更新开关，并支持设置每日启动自动检查频率。\n• 检测到新版本时会展示更新弹窗，可立即更新、下次启动时提醒或忽略本次更新。\n• 新增安装包下载和 SHA256 校验，通过校验后再调用系统安装器安装更新。\n• 优化 Gradle 下载源配置，提高本地构建时获取 Gradle 发行包的成功率。\n• 美化“关于”页面，参考手机系统关于本机样式展示 App 图标、版本和说明信息。</string>
     <string name="changelog_v029_title">V0.1.19 Build2608062314</string>

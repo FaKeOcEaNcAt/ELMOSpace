@@ -57,104 +57,153 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <LinearLayout style="@style/SettingsCard">
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/officialSettingsCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_official_section"
+                            android:src="@drawable/ic_settings_official" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_official_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
                     <LinearLayout
                         android:id="@+id/securityCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_security_section"
+                            android:src="@drawable/ic_settings_security" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_security_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/signCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_app_section"
+                            android:src="@drawable/ic_settings_sign" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_app_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
                     <LinearLayout
                         android:id="@+id/displayCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_display_section"
+                            android:src="@drawable/ic_settings_display" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_display_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/interactionCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_interaction_section"
+                            android:src="@drawable/ic_settings_interaction" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_interaction_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
                     <LinearLayout
                         android:id="@+id/networkCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_preload_section"
+                            android:src="@drawable/ic_settings_network" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_preload_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/permissionCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_permission_section"
+                            android:src="@drawable/ic_settings_permission" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_permission_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
                     <LinearLayout
                         android:id="@+id/powerCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_power_section"
+                            android:src="@drawable/ic_settings_power" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_power_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/storageCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_storage_section"
+                            android:src="@drawable/ic_settings_storage" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/settings_storage_section" />
-                        <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
                     <LinearLayout
-                        android:id="@+id/aboutCategoryRow"
-                        style="@style/SettingsRow">
+                        android:id="@+id/officialStoreCategoryRow"
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/settings_official_store"
+                            android:src="@drawable/ic_settings_store" />
                         <TextView
-                            style="@style/SettingsRowTitle"
-                            android:text="@string/about_title" />
-                        <TextView style="@style/SettingsArrow" />
+                            style="@style/SettingsCategoryTitle"
+                            android:text="@string/settings_official_store" />
                     </LinearLayout>
-                    <View style="@style/SettingsDivider" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/SettingsCategoryGridRow">
                     <LinearLayout
                         android:id="@+id/versionCategoryRow"
-                        style="@style/SettingsRow">
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/version_history_section"
+                            android:src="@drawable/ic_settings_version" />
                         <TextView
-                            style="@style/SettingsRowTitle"
+                            style="@style/SettingsCategoryTitle"
                             android:text="@string/version_history_section" />
-                        <TextView style="@style/SettingsArrow" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/aboutCategoryRow"
+                        style="@style/SettingsCategoryTile">
+                        <ImageView
+                            style="@style/SettingsCategoryIcon"
+                            android:contentDescription="@string/about_title"
+                            android:src="@drawable/ic_settings_about" />
+                        <TextView
+                            style="@style/SettingsCategoryTitle"
+                            android:text="@string/about_title" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -1503,6 +1552,28 @@
                         </LinearLayout>
                         <TextView style="@style/SettingsArrow" />
                     </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    style="@style/SettingsSectionTitle"
+                    android:layout_marginTop="22dp"
+                    android:text="@string/current_version_changelog_section" />
+                <LinearLayout
+                    style="@style/SettingsCard"
+                    android:padding="18dp">
+                    <TextView
+                        android:id="@+id/currentVersionChangelogTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/current_version_changelog_title"
+                        android:textColor="@color/error_text"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/currentVersionChangelogBody"
+                        style="@style/AboutParagraph"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/current_version_changelog_body" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

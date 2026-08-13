@@ -8,6 +8,7 @@ import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.TimePickerDialog
+import android.content.ActivityNotFoundException
 import android.content.res.ColorStateList
 import android.content.Intent
 import android.content.Context
@@ -531,6 +532,9 @@ class SettingsActivity : ComponentActivity() {
         findViewById<View>(R.id.storageCategoryRow).setOnClickListener {
             showSettingsPage(SettingsPage.STORAGE)
         }
+        findViewById<View>(R.id.officialStoreCategoryRow).setOnClickListener {
+            openOfficialStore()
+        }
         findViewById<View>(R.id.aboutCategoryRow).setOnClickListener {
             showSettingsPage(SettingsPage.ABOUT)
         }
@@ -843,14 +847,17 @@ class SettingsActivity : ComponentActivity() {
     private fun bindAccentColorSettings() {
         accentColorRow.setOnClickListener { showAccentColorPicker() }
         accentColorWheel.onColorChanged = { color ->
-            AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_WHEEL, color)
-            updateAccentColorUi(syncEditorControls = false)
+            if (AppPreferences.getAccentColorMode(this) == AppPreferences.ACCENT_COLOR_WHEEL) {
+                AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_WHEEL, color)
+                updateAccentColorUi(syncEditorControls = false)
+            }
         }
         accentHexInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
             override fun afterTextChanged(s: Editable?) {
                 if (updatingAccentControls) return
+                if (AppPreferences.getAccentColorMode(this@SettingsActivity) != AppPreferences.ACCENT_COLOR_HEX) return
                 AppAccentColor.parseHex(s?.toString().orEmpty())?.let { color ->
                     AppPreferences.setCustomAccentColor(this@SettingsActivity, AppPreferences.ACCENT_COLOR_HEX, color)
                     updateAccentColorUi(syncEditorControls = false)
@@ -959,6 +966,7 @@ class SettingsActivity : ComponentActivity() {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (!fromUser || updatingAccentControls) return
+                if (AppPreferences.getAccentColorMode(this@SettingsActivity) != AppPreferences.ACCENT_COLOR_RGB) return
                 updatingAccentControls = true
                 input.setText(progress.toString())
                 input.setSelection(input.text.length)
@@ -977,6 +985,7 @@ class SettingsActivity : ComponentActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
             override fun afterTextChanged(s: Editable?) {
                 if (updatingAccentControls) return
+                if (AppPreferences.getAccentColorMode(this@SettingsActivity) != AppPreferences.ACCENT_COLOR_RGB) return
                 val value = s?.toString()?.toIntOrNull() ?: return
                 if (value !in 0..255) return
                 updatingAccentControls = true
@@ -991,6 +1000,7 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun validateHexAccentOrReset() {
+        if (AppPreferences.getAccentColorMode(this) != AppPreferences.ACCENT_COLOR_HEX) return
         val color = AppAccentColor.parseHex(accentHexInput.text?.toString().orEmpty())
         if (color == null) {
             resetAccentColorAfterFormatError()
@@ -1001,6 +1011,7 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun validateRgbAccentOrReset() {
+        if (AppPreferences.getAccentColorMode(this) != AppPreferences.ACCENT_COLOR_RGB) return
         val color = currentRgbColorOrNull()
         if (color == null) {
             resetAccentColorAfterFormatError()
@@ -1011,6 +1022,7 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun applyRgbAccentFromControls() {
+        if (AppPreferences.getAccentColorMode(this) != AppPreferences.ACCENT_COLOR_RGB) return
         currentRgbColorOrNull()?.let { color ->
             AppPreferences.setCustomAccentColor(this, AppPreferences.ACCENT_COLOR_RGB, color)
             updateAccentColorUi(syncEditorControls = false)
@@ -1083,6 +1095,12 @@ class SettingsActivity : ComponentActivity() {
                 view.thumbTintList = list
             }
             is ProgressBar -> AppAccentColor.tintProgress(view, this)
+            is ImageView -> {
+                val current = view.imageTintList?.defaultColor
+                if (current != null && (current == defaultAccent || (previousAccent != null && current == previousAccent))) {
+                    view.imageTintList = ColorStateList.valueOf(accent)
+                }
+            }
             is TextView -> {
                 val current = view.textColors.defaultColor
                 if (current == defaultAccent || current == previousAccent) {
@@ -1844,6 +1862,23 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
+    private fun openOfficialStore() {
+        if (tryOpenPackage(OFFICIAL_STORE_TAOBAO_DEEP_LINK, TAOBAO_PACKAGE)) return
+        if (tryOpenPackage(OFFICIAL_STORE_URL, TMALL_PACKAGE)) return
+        openExternalUrl(OFFICIAL_STORE_URL)
+    }
+
+    private fun tryOpenPackage(url: String, packageName: String): Boolean {
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).setPackage(packageName))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     @Suppress("DEPRECATION")
     private fun finishWithTransition() {
         finish()
@@ -1879,5 +1914,10 @@ class SettingsActivity : ComponentActivity() {
         private const val ELMOSPACE_GITHUB_RELEASES_URL = "https://github.com/FaKeOcEaNcAt/ELMOSpace/releases"
         private const val ELMOSPACE_GITHUB_ISSUES_URL = "https://github.com/FaKeOcEaNcAt/ELMOSpace/issues"
         private const val AUTHOR_BILIBILI_URL = "https://space.bilibili.com/323603999"
+        private const val OFFICIAL_STORE_URL = "https://girlsfrontline.tmall.com/"
+        private const val OFFICIAL_STORE_TAOBAO_DEEP_LINK =
+            "tbopen://m.taobao.com/tbopen/index.html?action=ali.open.nav&module=h5&h5Url=https%3A%2F%2Fgirlsfrontline.tmall.com%2F"
+        private const val TAOBAO_PACKAGE = "com.taobao.taobao"
+        private const val TMALL_PACKAGE = "com.tmall.wireless"
     }
 }
