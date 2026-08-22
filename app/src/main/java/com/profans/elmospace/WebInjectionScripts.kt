@@ -303,6 +303,184 @@ object WebInjectionScripts {
         })();
         """.trimIndent()
 
+    fun tabletThreadSplitInterceptor(bridgeName: String): String {
+        val bridgeNameLiteral = JSONObject.quote(bridgeName)
+        return """
+        (function() {
+            if (location.pathname !== '/m' && location.pathname !== '/m/') return false;
+            const bridgeName = $bridgeNameLiteral;
+            const bridge = window[bridgeName];
+            if (!bridge || !bridge.openTabletThreadInfo) return false;
+            if (window.__androidTabletThreadSplitInstalled) return true;
+            window.__androidTabletThreadSplitInstalled = true;
+
+            const collectTopicModels = function(value, results, visited, depth) {
+                if (!value || typeof value !== 'object' || depth > 5) return;
+                if (visited.indexOf(value) >= 0) return;
+                visited.push(value);
+                if (value.topic_id) results.push(value);
+                if (Array.isArray(value)) {
+                    value.forEach(function(item) {
+                        collectTopicModels(item, results, visited, depth + 1);
+                    });
+                    return;
+                }
+                Object.keys(value).slice(0, 80).forEach(function(key) {
+                    collectTopicModels(value[key], results, visited, depth + 1);
+                });
+            };
+
+            const normalizeText = function(value) {
+                return String(value || '').replace(/\s+/g, ' ').trim();
+            };
+
+            const readTopicIdFromUrl = function(value) {
+                try {
+                    const url = new URL(String(value || ''), location.href);
+                    if (url.pathname !== '/m/threadInfo') return null;
+                    const id = url.searchParams.get('id');
+                    return /^\d+$/.test(id || '') ? id : null;
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            const readTopicIdFromCard = function(card) {
+                if (!card) return null;
+                const directUrl = card.getAttribute('href') ||
+                    card.getAttribute('data-url') ||
+                    card.getAttribute('data-href') ||
+                    '';
+                const directId = readTopicIdFromUrl(directUrl);
+                if (directId) return directId;
+                const link = card.querySelector('a[href*="threadInfo"]');
+                return link ? readTopicIdFromUrl(link.getAttribute('href')) : null;
+            };
+
+            const readCardText = function(card) {
+                if (!card) return { title: '', author: '' };
+                const titleNode = card.querySelector('.card_tit p, .card_m1 > p');
+                const authorNode = card.querySelector('.card_t .card_tm > div');
+                const authorCopy = authorNode ? authorNode.cloneNode(true) : null;
+                if (authorCopy) {
+                    authorCopy.querySelectorAll('span, img').forEach(function(node) {
+                        node.remove();
+                    });
+                }
+                return {
+                    title: normalizeText(
+                        card.getAttribute('title') ||
+                        (titleNode && titleNode.textContent) ||
+                        (card.classList && card.classList.contains('index_news_item') && card.querySelector('p') && card.querySelector('p').textContent) ||
+                        ''
+                    ),
+                    author: authorCopy
+                        ? normalizeText(authorCopy.textContent || '')
+                        : ''
+                };
+            };
+
+            const findPostModel = function(card) {
+                if (!card) return null;
+                const directTopicId = readTopicIdFromCard(card);
+                if (directTopicId) return { topic_id: directTopicId };
+                const cardText = readCardText(card);
+                const title = cardText.title;
+                const author = cardText.author;
+                const allowRelaxedTitle = card.classList &&
+                    card.classList.contains('index_news_item');
+                let node = card;
+                const visited = [];
+                while (node) {
+                    let vm = node.__vue__;
+                    let depth = 0;
+                    while (vm && depth < 10) {
+                        if (visited.indexOf(vm) >= 0) break;
+                        visited.push(vm);
+                        const candidates = [];
+                        collectTopicModels(vm.${'$'}data || vm, candidates, [], 0);
+                        const match = candidates.find(function(item) {
+                            if (!item || !item.topic_id) return false;
+                            if (title && normalizeText(item.title || '') !== title) return false;
+                            return !author ||
+                                normalizeText(item.user_nick_name || '') === author;
+                        }) || (allowRelaxedTitle ? candidates.find(function(item) {
+                            if (!item || !item.topic_id || !title) return false;
+                            const itemTitle = normalizeText(item.title || '');
+                            return itemTitle === title ||
+                                itemTitle.indexOf(title) >= 0 ||
+                                title.indexOf(itemTitle) >= 0;
+                        }) : null);
+                        if (match) return match;
+                        vm = vm.${'$'}parent;
+                        depth++;
+                    }
+                    node = node.parentElement;
+                }
+                return null;
+            };
+
+            const shouldIgnore = function(target, card) {
+                if (!target || !target.closest) return true;
+                if (target.closest('.the_box, .van-button, button, .van-popover, .van-popup')) {
+                    return true;
+                }
+                const cardButton = target.closest('.card_b_item');
+                if (cardButton) {
+                    const cardBar = cardButton.parentElement;
+                    const items = cardBar
+                        ? Array.from(cardBar.children).filter(function(item) {
+                            return item.classList && item.classList.contains('card_b_item');
+                        })
+                        : [];
+                    if (items.length >= 2 && cardButton === items[items.length - 1]) {
+                        return true;
+                    }
+                }
+                return !card || !card.contains(target);
+            };
+
+            const findPinnedNewsRow = function(target) {
+                const row = target && target.closest ? target.closest('.index_news_item') : null;
+                if (!row) return null;
+                const container = row.closest('.index_news');
+                return container && container.contains(row) ? row : null;
+            };
+
+            const openPostInTabletPane = function(event, post) {
+                if (!post || !post.topic_id) return false;
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                bridge.openTabletThreadInfo(String(post.topic_id));
+                return true;
+            };
+
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                if (!target || !target.closest) return;
+                const pinnedNewsRow = findPinnedNewsRow(target);
+                if (pinnedNewsRow) {
+                    const pinnedPost = findPostModel(pinnedNewsRow);
+                    if (openPostInTabletPane(event, pinnedPost)) return;
+                }
+                const card = target.closest('.card_item');
+                if (shouldIgnore(target, card)) return;
+                const activeArea = target.closest('.card_t, .card_m, .card_b_item, .img_box');
+                if (!activeArea || !card.contains(activeArea)) return;
+                const post = findPostModel(card);
+                if (!openPostInTabletPane(event, post)) {
+                    window.__androidTabletThreadSplitLastFailure = {
+                        title: readCardText(card).title,
+                        time: Date.now()
+                    };
+                }
+            }, true);
+            return true;
+        })();
+        """.trimIndent()
+    }
+
     fun clickWebNavItem(webIndex: Int): String =
         """
         (function() {

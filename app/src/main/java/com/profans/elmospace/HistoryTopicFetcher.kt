@@ -1,8 +1,8 @@
 package com.profans.elmospace
 
+import android.content.Context
 import com.profans.elmospace.WebConstants.TOPIC_DETAIL_API_URL
 import java.net.HttpURLConnection
-import java.net.URL
 import org.json.JSONObject
 
 data class HistoryTopicDetails(
@@ -18,14 +18,17 @@ object HistoryTopicFetcher {
         value.replace(Regex("\\s+"), " ").trim().take(maxLength)
 
     fun fetchTopicDetails(
+        context: Context,
         topicId: Long,
         fallbackTitle: String,
         fallbackAuthor: String
     ): HistoryTopicDetails {
         var connection: HttpURLConnection? = null
         return try {
-            connection = URL("$TOPIC_DETAIL_API_URL/$topicId?id=$topicId")
-                .openConnection() as HttpURLConnection
+            connection = AppNetworkProxy.openHttpConnection(
+                context,
+                "$TOPIC_DETAIL_API_URL/$topicId?id=$topicId"
+            )
             connection.requestMethod = "GET"
             connection.connectTimeout = HISTORY_DETAIL_TIMEOUT_MS
             connection.readTimeout = HISTORY_DETAIL_TIMEOUT_MS

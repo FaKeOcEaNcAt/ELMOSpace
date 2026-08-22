@@ -45,6 +45,7 @@ class LikeEffectAddActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowLayout.lockPhonePortrait(this)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_like_effect_add)
@@ -52,6 +53,8 @@ class LikeEffectAddActivity : ComponentActivity() {
 
         preview = findViewById(R.id.likeEffectAddPreview)
         nameInput = findViewById(R.id.likeEffectNameInput)
+        AppAccentColor.tintOutlinedButton(findViewById(R.id.likeEffectChooseImage), this)
+        AppAccentColor.tintOutlinedButton(findViewById(R.id.likeEffectSave), this)
 
         findViewById<View>(R.id.likeEffectAddBack).setOnClickListener { finishWithTransition() }
         findViewById<View>(R.id.likeEffectChooseImage).setOnClickListener { chooseImage() }

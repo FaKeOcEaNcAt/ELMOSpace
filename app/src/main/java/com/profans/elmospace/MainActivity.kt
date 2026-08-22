@@ -33,6 +33,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ImageView
@@ -66,12 +67,14 @@ import com.profans.elmospace.WebRouteRules.normalizeInternalNavigationUri
 class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var contentFrame: FrameLayout
     private lateinit var bottomNavigation: LinearLayout
     private lateinit var bottomDivider: View
     private lateinit var errorOverlay: View
     private lateinit var progressBar: ProgressBar
     private lateinit var mobileDataWarningToast: TextView
     private lateinit var navItems: List<View>
+    private lateinit var tabletParallelBrowser: TabletParallelBrowserController
 
     private var selectedTab = TAB_HOME
     private var pendingRootTab: Int? = null
@@ -130,6 +133,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowLayout.lockPhonePortrait(this)
         super.onCreate(savedInstanceState)
         appliedDarkMode = AppTheme.isDarkMode(applicationContext)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -138,6 +142,7 @@ class MainActivity : ComponentActivity() {
         bindViews()
         applyAccentColor()
         applySystemBarInsets()
+        AppNetworkProxy.applyWebViewProxyPolicy(this)
         configureWebView()
         configureBottomNavigation()
         configureBackNavigation()
@@ -190,6 +195,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val targetUrl = getTrustedIntentTarget(intent) ?: return
+        closeTabletDetailPane()
         prepareIntentNavigation(intent, targetUrl)
         webView.loadUrl(targetUrl)
     }
@@ -227,15 +233,22 @@ class MainActivity : ComponentActivity() {
             applyAccentColor()
             injectDarkModeStyles(webView.url)
             injectEnhancedLikeInteraction(webView.url)
+            if (isParallelBrowsingActive()) {
+                setupTabletDetailPaneIfNeeded()
+            } else {
+                destroyTabletDetailPane()
+            }
             if (isRootUrl(webView.url)) {
                 injectFeedImagePreloader()
                 injectHomeSliderPaginationFix()
+                injectTabletThreadSplitInterceptor()
             }
         }
     }
 
     private fun bindViews() {
         webView = findViewById(R.id.webView)
+        contentFrame = findViewById(R.id.contentFrame)
         bottomNavigation = findViewById(R.id.bottomNavigation)
         bottomDivider = findViewById(R.id.bottomDivider)
         errorOverlay = findViewById(R.id.errorOverlay)
@@ -248,6 +261,21 @@ class MainActivity : ComponentActivity() {
             findViewById(R.id.navMessages),
             findViewById(R.id.navMine)
         )
+        tabletParallelBrowser = TabletParallelBrowserController(
+            context = this,
+            contentFrame = contentFrame,
+            masterWebView = webView,
+            progressBar = progressBar,
+            errorOverlay = errorOverlay,
+            bridgeName = JS_BRIDGE_NAME,
+            isActive = ::isParallelBrowsingActive,
+            configureWebViewSettings = ::configureWebViewSettings,
+            createDetailWebViewClient = ::createTabletDetailWebViewClient,
+            createDetailWebChromeClient = ::createDetailWebChromeClient,
+            createBridge = { NativeUiBridge() }
+        )
+        tabletParallelBrowser.attachLayoutListener()
+        setupTabletDetailPaneIfNeeded()
     }
 
     private fun showMobileDataWarningIfNeeded() {
@@ -329,7 +357,16 @@ class MainActivity : ComponentActivity() {
             setAcceptThirdPartyCookies(webView, true)
         }
 
-        webView.settings.apply {
+        configureWebViewSettings(webView)
+        webView.webViewClient = createWebViewClient()
+        webView.webChromeClient = createMainWebChromeClient()
+        webView.addJavascriptInterface(NativeUiBridge(), JS_BRIDGE_NAME)
+        webView.setBackgroundColor(ContextCompat.getColor(this, R.color.app_background))
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun configureWebViewSettings(targetWebView: WebView) {
+        targetWebView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = false
@@ -341,17 +378,20 @@ class MainActivity : ComponentActivity() {
             builtInZoomControls = false
             displayZoomControls = false
         }
+    }
 
-        webView.webViewClient = createWebViewClient()
-        webView.webChromeClient = createWebChromeClient()
-        webView.addJavascriptInterface(NativeUiBridge(), JS_BRIDGE_NAME)
-        webView.setBackgroundColor(ContextCompat.getColor(this, R.color.app_background))
+    private fun setupTabletDetailPaneIfNeeded() = tabletParallelBrowser.setupIfNeeded()
+
+    private fun isParallelBrowsingActive(): Boolean {
+        return WindowLayout.isTabletLandscapeLayout(this) &&
+            AppPreferences.isParallelBrowsingEnabled(this)
     }
 
     private fun configureBottomNavigation() {
         navItems[TAB_HOME].setOnClickListener { openRootTab(TAB_HOME) }
         navItems[TAB_FOLLOW].setOnClickListener { openRootTab(TAB_FOLLOW) }
         navItems[TAB_PUBLISH].setOnClickListener {
+            closeTabletDetailPane()
             selectedTab = TAB_PUBLISH
             selectNativeTab(TAB_PUBLISH)
             pendingRootTab = null
@@ -362,6 +402,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openRootTab(tab: Int) {
+        closeTabletDetailPane()
         selectedTab = tab
         selectNativeTab(tab)
 
@@ -447,6 +488,7 @@ class MainActivity : ComponentActivity() {
                 injectNativeSettingsShortcut()
                 injectFeedImagePreloader()
                 injectHomeSliderPaginationFix()
+                injectTabletThreadSplitInterceptor()
                 pendingRootTab?.let { clickWebNavItem(it, CLICK_RETRY_COUNT) }
                 showSignRefreshNoticeIfPending()
                 attemptAutoSignIn()
@@ -477,6 +519,7 @@ class MainActivity : ComponentActivity() {
                 injectNativeSettingsShortcut()
                 injectFeedImagePreloader()
                 injectHomeSliderPaginationFix()
+                injectTabletThreadSplitInterceptor()
             } else {
                 removeHideWebNavCss()
             }
@@ -528,8 +571,55 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createWebChromeClient() = object : WebChromeClient() {
+    private fun createTabletDetailWebViewClient() = object : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            return handleTabletDetailNavigation(view, request.url)
+        }
+
+        @Suppress("DEPRECATION")
+        override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+            return handleTabletDetailNavigation(view, Uri.parse(url))
+        }
+
+        override fun onPageFinished(view: WebView, url: String) {
+            if (closeTabletDetailPaneIfReturnedToMaster(url)) return
+            injectTabletDetailScripts(view, url)
+        }
+
+        override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+            if (closeTabletDetailPaneIfReturnedToMaster(url)) return
+            injectTabletDetailScripts(view, url)
+        }
+
+        override fun onPageCommitVisible(view: WebView, url: String) {
+            injectDarkModeStyles(url, view)
+        }
+
+        override fun onReceivedSslError(
+            view: WebView,
+            handler: SslErrorHandler,
+            error: android.net.http.SslError
+        ) {
+            handler.cancel()
+            Toast.makeText(this@MainActivity, R.string.page_load_failed, Toast.LENGTH_SHORT).show()
+        }
+
+        override fun onRenderProcessGone(
+            view: WebView,
+            detail: RenderProcessGoneDetail
+        ): Boolean {
+            closeTabletDetailPane()
+            return true
+        }
+    }
+
+    private fun createMainWebChromeClient() = createWebChromeClient(updateMainProgress = true)
+
+    private fun createDetailWebChromeClient() = createWebChromeClient(updateMainProgress = false)
+
+    private fun createWebChromeClient(updateMainProgress: Boolean) = object : WebChromeClient() {
         override fun onProgressChanged(view: WebView, newProgress: Int) {
+            if (!updateMainProgress) return
             progressBar.progress = newProgress
             progressBar.visibility = if (newProgress in 0..99) View.VISIBLE else View.GONE
         }
@@ -585,8 +675,40 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    private fun handleTabletDetailNavigation(view: WebView, uri: Uri): Boolean {
+        val normalizedInternalUri = normalizeInternalNavigationUri(uri)
+        if (normalizedInternalUri != null && normalizedInternalUri != uri) {
+            view.loadUrl(normalizedInternalUri.toString())
+            return true
+        }
+        if (isSettingsUrl(uri.toString())) {
+            closeTabletDetailPane()
+            openNativeSettings()
+            return true
+        }
+        if (isInternalAppUri(uri) || normalizedInternalUri != null) return false
+        openExternalUrl(uri)
+        return true
+    }
+
+    private fun injectTabletDetailScripts(targetWebView: WebView, url: String) {
+        injectDarkModeStyles(url, targetWebView)
+        injectEnhancedLikeInteraction(url, targetWebView)
+        injectThreadShareInterceptor(url, targetWebView)
+        injectBrowsingHistoryCollector(url, targetWebView)
+    }
+
+    private fun closeTabletDetailPaneIfReturnedToMaster(url: String?): Boolean {
+        return tabletParallelBrowser.closeIfReturnedToMaster(url, ::isRootUrl)
+    }
+
     private fun handleMainFrameNavigation(uri: Uri): Boolean {
         val normalizedInternalUri = normalizeInternalNavigationUri(uri)
+        val targetUri = normalizedInternalUri ?: uri
+        if (shouldOpenInTabletDetail(targetUri)) {
+            openTabletDetailPane(targetUri.toString())
+            return true
+        }
         if (normalizedInternalUri != null && normalizedInternalUri != uri) {
             webView.loadUrl(normalizedInternalUri.toString())
             return true
@@ -601,13 +723,20 @@ class MainActivity : ComponentActivity() {
             return true
         }
         officialSettingsVisible = false
-        if (isRootUrl(webView.url) && isThreadInfoUri(uri)) {
-            startThreadForwardTransition(uri.toString())
+        if (isRootUrl(webView.url) && isThreadInfoUri(targetUri)) {
+            startThreadForwardTransition(targetUri.toString())
             return true
         }
         if (isInternalAppUri(uri) || normalizedInternalUri != null) return false
         openExternalUrl(uri)
         return true
+    }
+
+    private fun shouldOpenInTabletDetail(uri: Uri): Boolean {
+        return isParallelBrowsingActive() &&
+            isRootUrl(webView.url) &&
+            isThreadInfoUri(uri) &&
+            tabletParallelBrowser.hasDetailWebView()
     }
 
     private fun isSettingsUrl(url: String?): Boolean {
@@ -679,7 +808,7 @@ class MainActivity : ComponentActivity() {
         officialFeatureTransitionPending = true
         webView.animate().cancel()
         webView.alpha = 0f
-        webView.translationX = resources.displayMetrics.widthPixels * WEB_TRANSITION_DISTANCE_RATIO
+        webView.translationX = webTransitionDistance()
         bottomNavigation.visibility = View.GONE
         bottomDivider.visibility = View.GONE
         progressBar.visibility = View.VISIBLE
@@ -747,6 +876,24 @@ class MainActivity : ComponentActivity() {
             .start()
     }
 
+    private fun webTransitionDistance(): Float {
+        val ratio = if (WindowLayout.isTabletLayout(this)) {
+            WEB_TRANSITION_TABLET_DISTANCE_RATIO
+        } else {
+            WEB_TRANSITION_DISTANCE_RATIO
+        }
+        return resources.displayMetrics.widthPixels * ratio
+    }
+
+    private fun openTabletDetailPane(url: String) {
+        threadForwardTransitionPending = false
+        tabletParallelBrowser.open(url)
+    }
+
+    private fun closeTabletDetailPane() = tabletParallelBrowser.close()
+
+    private fun destroyTabletDetailPane() = tabletParallelBrowser.closeAndDestroy()
+
     private fun updateNativeChrome(url: String?) {
         syncPublishExitSelection(url)
         val visibility = if (isRootUrl(url) && !imagePreviewVisible) View.VISIBLE else View.GONE
@@ -776,14 +923,14 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun injectBrowsingHistoryCollector(url: String?) {
+    private fun injectBrowsingHistoryCollector(url: String?, targetWebView: WebView = webView) {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         if (!isInternalMobileUri(uri)) return
         val topicId = uri.getQueryParameter("id")
             ?.takeIf { isThreadInfoUri(uri) && it.toLongOrNull()?.let { id -> id > 0L } == true }
 
         if (topicId == null) {
-            webView.evaluateJavascript(
+            targetWebView.evaluateJavascript(
                 """
                 (function() {
                     window.clearTimeout(window.__androidHistoryRecordTimer);
@@ -798,7 +945,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val bridgeName = JSONObject.quote(JS_BRIDGE_NAME)
-        webView.evaluateJavascript(
+        targetWebView.evaluateJavascript(
             """
             (function() {
                 const routeKey = ${JSONObject.quote(topicId)};
@@ -851,12 +998,22 @@ class MainActivity : ComponentActivity() {
                         window.__androidHistoryRouteKey !== routeKey ||
                         !bridge) return;
                     window.__androidHistoryRecorded = true;
-                    bridge.recordBrowsingHistory(
-                        routeKey,
-                        details.title,
-                        details.author,
-                        details.viewCount
-                    );
+                    if (bridge.recordBrowsingHistoryFromUrl) {
+                        bridge.recordBrowsingHistoryFromUrl(
+                            routeKey,
+                            details.title,
+                            details.author,
+                            details.viewCount,
+                            window.location.href
+                        );
+                    } else {
+                        bridge.recordBrowsingHistory(
+                            routeKey,
+                            details.title,
+                            details.author,
+                            details.viewCount
+                        );
+                    }
                 };
 
                 waitForDetails(0);
@@ -867,7 +1024,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun injectEnhancedLikeInteraction(url: String?) {
+    private fun injectEnhancedLikeInteraction(url: String?, targetWebView: WebView = webView) {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         if (!isInternalMobileUri(uri)) return
 
@@ -881,7 +1038,7 @@ class MainActivity : ComponentActivity() {
         val dataUrls = if (enabled && randomEffect) getLikeEffectDataUrlsJson() else "[]"
         val bridgeName = JSONObject.quote(JS_BRIDGE_NAME)
 
-        webView.evaluateJavascript(
+        targetWebView.evaluateJavascript(
             """
             (function() {
                 const androidBridgeName = $bridgeName;
@@ -1229,12 +1386,12 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun injectThreadShareInterceptor(url: String?) {
+    private fun injectThreadShareInterceptor(url: String?, targetWebView: WebView = webView) {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         if (!isThreadInfoUri(uri)) return
 
         val bridgeName = JSONObject.quote(JS_BRIDGE_NAME)
-        webView.evaluateJavascript(
+        targetWebView.evaluateJavascript(
             """
             (function() {
                 const bridgeName = $bridgeName;
@@ -1365,13 +1522,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun injectDarkModeStyles(url: String?) {
+    private fun injectDarkModeStyles(url: String?, targetWebView: WebView = webView) {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         if (!isInternalMobileUri(uri)) return
         val darkEnabled = AppTheme.isDarkMode(applicationContext)
         val accentHex = AppAccentColor.hex(this)
         val accentRgb = AppAccentColor.rgbCss(this)
-        webView.evaluateJavascript(
+        targetWebView.evaluateJavascript(
             """
             (function() {
                 const styleId = 'android-dark-mode-style';
@@ -2012,6 +2169,36 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun recordBrowsingHistoryFromTrustedUrl(
+        topicIdValue: String,
+        titleValue: String,
+        authorValue: String,
+        viewCountValue: String,
+        urlValue: String
+    ) {
+        val currentUri = runCatching { Uri.parse(urlValue) }.getOrNull() ?: return
+        if (!isThreadInfoUri(currentUri)) return
+
+        val topicId = topicIdValue.toLongOrNull()?.takeIf { it > 0L } ?: return
+        if (currentUri.getQueryParameter("id")?.toLongOrNull() != topicId) return
+
+        val title = HistoryTopicFetcher.sanitizeText(titleValue, 240)
+        val author = HistoryTopicFetcher.sanitizeText(authorValue, 80)
+        val viewCount = viewCountValue.toLongOrNull()?.coerceAtLeast(0L) ?: return
+        if (title.isBlank() || author.isBlank()) return
+
+        historyExecutor.execute {
+            BrowsingHistoryRepository.record(
+                applicationContext,
+                topicId,
+                title,
+                author,
+                viewCount,
+                urlValue
+            )
+        }
+    }
+
     private inner class NativeUiBridge {
         @JavascriptInterface
         fun openNativeSettings() {
@@ -2030,6 +2217,22 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun openTabletThreadInfo(topicIdValue: String) {
+            runOnUiThread {
+                val topicId = topicIdValue.toLongOrNull()?.takeIf { it > 0L }
+                    ?: return@runOnUiThread
+                if (!isRootUrl(webView.url)) return@runOnUiThread
+                val targetUrl = "$HOME_URL_PREFIX/threadInfo?id=$topicId&hash_flag=1"
+                if (isParallelBrowsingActive()) {
+                    setupTabletDetailPaneIfNeeded()
+                    openTabletDetailPane(targetUrl)
+                } else {
+                    startThreadForwardTransition(targetUrl)
+                }
+            }
+        }
+
+        @JavascriptInterface
         fun recordBrowsingHistory(
             topicIdValue: String,
             titleValue: String,
@@ -2038,31 +2241,32 @@ class MainActivity : ComponentActivity() {
         ) {
             runOnUiThread {
                 val currentUrl = webView.url ?: return@runOnUiThread
-                val currentUri =
-                    runCatching { Uri.parse(currentUrl) }.getOrNull() ?: return@runOnUiThread
-                if (!isThreadInfoUri(currentUri)) return@runOnUiThread
+                recordBrowsingHistoryFromTrustedUrl(
+                    topicIdValue,
+                    titleValue,
+                    authorValue,
+                    viewCountValue,
+                    currentUrl
+                )
+            }
+        }
 
-                val topicId =
-                    topicIdValue.toLongOrNull()?.takeIf { it > 0L } ?: return@runOnUiThread
-                if (currentUri.getQueryParameter("id")?.toLongOrNull() != topicId) {
-                    return@runOnUiThread
-                }
-                val title = HistoryTopicFetcher.sanitizeText(titleValue, 240)
-                val author = HistoryTopicFetcher.sanitizeText(authorValue, 80)
-                val viewCount =
-                    viewCountValue.toLongOrNull()?.coerceAtLeast(0L) ?: return@runOnUiThread
-                if (title.isBlank() || author.isBlank()) return@runOnUiThread
-
-                historyExecutor.execute {
-                    BrowsingHistoryRepository.record(
-                        applicationContext,
-                        topicId,
-                        title,
-                        author,
-                        viewCount,
-                        currentUrl
-                    )
-                }
+        @JavascriptInterface
+        fun recordBrowsingHistoryFromUrl(
+            topicIdValue: String,
+            titleValue: String,
+            authorValue: String,
+            viewCountValue: String,
+            urlValue: String
+        ) {
+            runOnUiThread {
+                recordBrowsingHistoryFromTrustedUrl(
+                    topicIdValue,
+                    titleValue,
+                    authorValue,
+                    viewCountValue,
+                    urlValue
+                )
             }
         }
 
@@ -2086,7 +2290,12 @@ class MainActivity : ComponentActivity() {
                         return@execute
                     }
 
-                    val details = HistoryTopicFetcher.fetchTopicDetails(topicId, title, author)
+                    val details = HistoryTopicFetcher.fetchTopicDetails(
+                        applicationContext,
+                        topicId,
+                        title,
+                        author
+                    )
                     BrowsingHistoryRepository.record(
                         applicationContext,
                         topicId,
@@ -2296,6 +2505,14 @@ class MainActivity : ComponentActivity() {
         if (!isRootUrl(webView.url)) return
         webView.evaluateJavascript(
             WebInjectionScripts.homeSliderPaginationFix(),
+            null
+        )
+    }
+
+    private fun injectTabletThreadSplitInterceptor() {
+        if (!isParallelBrowsingActive() || !isRootUrl(webView.url)) return
+        webView.evaluateJavascript(
+            WebInjectionScripts.tabletThreadSplitInterceptor(JS_BRIDGE_NAME),
             null
         )
     }
@@ -2538,6 +2755,11 @@ class MainActivity : ComponentActivity() {
         if (threadForwardTransitionPending) {
             resetWebViewVisualState()
         }
+        if (tabletParallelBrowser.handleBack { uri ->
+                uri == null || isThreadInfoUri(uri) || isRootUrl(uri.toString())
+            }) {
+            return
+        }
         if (returnToNativeSettingsPending && officialFeatureReached) {
             returnToNativeSettings(resetWebViewToHome = true)
             return
@@ -2558,6 +2780,7 @@ class MainActivity : ComponentActivity() {
         filePathCallback?.onReceiveValue(null)
         finishGeolocationRequest(false)
         historyExecutor.shutdownNow()
+        tabletParallelBrowser.destroy()
         webView.stopLoading()
         webView.removeJavascriptInterface(JS_BRIDGE_NAME)
         webView.webChromeClient = null
@@ -2585,6 +2808,7 @@ class MainActivity : ComponentActivity() {
         private const val MAIN_FRAME_RENDER_CHECK_DELAY_MS = 400L
         private const val MAIN_FRAME_AUTOMATIC_RETRY_LIMIT = 1
         private const val WEB_TRANSITION_DISTANCE_RATIO = 0.04f
+        private const val WEB_TRANSITION_TABLET_DISTANCE_RATIO = 0.018f
         private const val WEB_TRANSITION_DIM_ALPHA = 0.72f
         private const val SETTINGS_TRANSITION_DURATION_MS = 240L
         private const val THREAD_TRANSITION_DIM_ALPHA = 0.82f

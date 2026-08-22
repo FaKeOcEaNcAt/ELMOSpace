@@ -14,8 +14,8 @@ android {
         applicationId = "com.profans.elmospace"
         minSdk = 28
         targetSdk = 36
-        versionCode = 27
-        versionName = "0.1.25"
+        versionCode = 28
+        versionName = "0.1.26"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +38,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.webkit)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

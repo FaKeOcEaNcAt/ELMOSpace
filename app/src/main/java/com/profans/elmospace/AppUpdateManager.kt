@@ -25,7 +25,7 @@ object AppUpdateManager {
     private const val UPDATE_CACHE_DIR = "app_updates"
 
     fun checkLatest(context: Context): CheckResult {
-        val response = httpGet(LATEST_RELEASE_API)
+        val response = httpGet(context, LATEST_RELEASE_API)
         val json = JSONObject(response)
         val body = json.optString("body")
         val versionCode = parseVersionCode(body)
@@ -100,7 +100,7 @@ object AppUpdateManager {
     ): DownloadAttemptResult {
         var connection: HttpURLConnection? = null
         try {
-            connection = URL(info.apkDownloadUrl).openConnection() as HttpURLConnection
+            connection = AppNetworkProxy.openHttpConnection(context, info.apkDownloadUrl)
             cancelToken.attach(connection)
             connection.apply {
                 connectTimeout = CONNECT_TIMEOUT_MS
@@ -185,8 +185,8 @@ object AppUpdateManager {
         File(context.cacheDir, UPDATE_CACHE_DIR).deleteRecursively()
     }
 
-    private fun httpGet(url: String): String {
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+    private fun httpGet(context: Context, url: String): String {
+        val connection = AppNetworkProxy.openHttpConnection(context, url).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             requestMethod = "GET"

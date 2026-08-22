@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="main_nav_rail_width">104dp</dimen>
+    <dimen name="main_web_content_max_width">0dp</dimen>
+    <dimen name="main_tablet_content_horizontal_padding">0dp</dimen>
+    <dimen name="settings_content_max_width">980dp</dimen>
+    <dimen name="tablet_parallel_master_min_width">440dp</dimen>
+    <dimen name="tablet_parallel_detail_min_width">520dp</dimen>
+</resources>

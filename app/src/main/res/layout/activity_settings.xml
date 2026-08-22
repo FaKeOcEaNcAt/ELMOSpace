@@ -873,6 +873,30 @@
                             style="@style/SettingsSwitch" />
                     </LinearLayout>
                 </LinearLayout>
+
+                <TextView
+                    style="@style/SettingsSectionTitle"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/settings_browsing_section" />
+                <LinearLayout style="@style/SettingsCard">
+                    <LinearLayout
+                        android:id="@+id/parallelBrowsingRow"
+                        style="@style/SettingsRow">
+                        <TextView
+                            style="@style/SettingsRowTitle"
+                            android:text="@string/parallel_browsing" />
+                        <Switch
+                            android:id="@+id/parallelBrowsingSwitch"
+                            style="@style/SettingsSwitch" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/parallelBrowsingSummary"
+                        style="@style/SettingsRowSummary"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="16dp"
+                        android:text="@string/parallel_browsing_summary" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
@@ -1048,6 +1072,27 @@
                     style="@style/SettingsSectionTitle"
                     android:text="@string/settings_preload_section" />
                 <LinearLayout style="@style/SettingsCard">
+                    <LinearLayout
+                        android:id="@+id/useSystemProxyRow"
+                        style="@style/SettingsRow">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                style="@style/SettingsRowTitle"
+                                android:layout_width="match_parent"
+                                android:text="@string/use_system_proxy" />
+                            <TextView
+                                style="@style/SettingsRowSummary"
+                                android:text="@string/use_system_proxy_summary" />
+                        </LinearLayout>
+                        <Switch
+                            android:id="@+id/useSystemProxySwitch"
+                            style="@style/SettingsSwitch" />
+                    </LinearLayout>
+                    <View style="@style/SettingsDivider" />
                     <LinearLayout
                         android:id="@+id/mobileDataWarningRow"
                         style="@style/SettingsRow">

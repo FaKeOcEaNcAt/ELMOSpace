@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="tablet_parallel_master_width_percent">48</integer>
+</resources>

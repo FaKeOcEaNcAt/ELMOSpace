@@ -31,6 +31,7 @@ class AutoExchangeActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowLayout.lockPhonePortrait(this)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_auto_exchange)
@@ -40,6 +41,7 @@ class AutoExchangeActivity : ComponentActivity() {
         lastSyncText = findViewById(R.id.autoExchangeLastSync)
         syncButton = findViewById(R.id.autoExchangeSyncButton)
         list = findViewById(R.id.autoExchangeList)
+        AppAccentColor.tintOutlinedButton(syncButton, this)
 
         findViewById<View>(R.id.autoExchangeBack).setOnClickListener { finishWithTransition() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -220,10 +222,7 @@ class AutoExchangeActivity : ComponentActivity() {
             setTextColor(AppAccentColor.color(this@AutoExchangeActivity))
             textSize = 12f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            background = ContextCompat.getDrawable(
-                this@AutoExchangeActivity,
-                R.drawable.bg_permission_action
-            )
+            AppAccentColor.tintOutlinedButton(this, this@AutoExchangeActivity)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 (34 * density).toInt()
@@ -268,7 +267,7 @@ class AutoExchangeActivity : ComponentActivity() {
             setTextColor(AppAccentColor.color(this@AutoExchangeActivity))
             textSize = 18f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            background = ContextCompat.getDrawable(this@AutoExchangeActivity, R.drawable.bg_permission_action)
+            AppAccentColor.tintOutlinedButton(this, this@AutoExchangeActivity)
             layoutParams = LinearLayout.LayoutParams((42 * density).toInt(), (34 * density).toInt())
                 .apply { leftMargin = (8 * density).toInt() }
             setOnClickListener { onClick() }

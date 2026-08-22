@@ -28,8 +28,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.view.animation.LinearInterpolator
-import android.widget.FrameLayout
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
@@ -55,6 +55,7 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var settingsTitle: TextView
     private lateinit var settingsContent: LinearLayout
     private lateinit var settingsContentScroll: ScrollView
+    private lateinit var settingsCategoryPage: LinearLayout
     private val settingsPages = mutableMapOf<SettingsPage, View>()
     private var currentSettingsPage = SettingsPage.CATEGORIES
     private var settingsPageTransitionRunning = false
@@ -136,6 +137,11 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
+    private data class SettingsCategoryDefinition(
+        val rowId: Int,
+        val page: SettingsPage
+    )
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -152,6 +158,7 @@ class SettingsActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowLayout.lockPhonePortrait(this)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_settings)
@@ -160,6 +167,9 @@ class SettingsActivity : ComponentActivity() {
         settingsTitle = findViewById(R.id.settingsTitle)
         settingsContent = findViewById(R.id.settingsContent)
         settingsContentScroll = findViewById(R.id.settingsContentScroll)
+        settingsCategoryPage = findViewById(R.id.settingsCategoryPage)
+        applyTabletContentWidthWhenReady()
+        applyTabletCategoryGridIfNeeded()
         initializeSettingsPages()
 
         scheduledSwitch = findViewById(R.id.scheduledSignSwitch)
@@ -336,6 +346,23 @@ class SettingsActivity : ComponentActivity() {
             testScheduledSignIn()
         }
 
+        val useSystemProxySwitch = findViewById<Switch>(R.id.useSystemProxySwitch)
+        useSystemProxySwitch.isChecked = AppPreferences.isUseSystemProxyEnabled(this)
+        useSystemProxySwitch.setOnCheckedChangeListener { _, checked ->
+            AppPreferences.setUseSystemProxyEnabled(this, checked)
+            AppNetworkProxy.applyWebViewProxyPolicy(this)
+            if (!AppNetworkProxy.isWebViewProxyOverrideSupported()) {
+                Toast.makeText(
+                    this,
+                    R.string.use_system_proxy_legacy_notice,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+        findViewById<View>(R.id.useSystemProxyRow).setOnClickListener {
+            useSystemProxySwitch.isChecked = !useSystemProxySwitch.isChecked
+        }
+
         val mobileDataWarningSwitch = findViewById<Switch>(R.id.mobileDataWarningSwitch)
         mobileDataWarningSwitch.isChecked = AppPreferences.isMobileDataWarningEnabled(this)
         mobileDataWarningSwitch.setOnCheckedChangeListener { _, checked ->
@@ -390,6 +417,27 @@ class SettingsActivity : ComponentActivity() {
         }
         findViewById<View>(R.id.splashAnimationRow).setOnClickListener {
             splashAnimationSwitch.isChecked = !splashAnimationSwitch.isChecked
+        }
+        val parallelBrowsingSwitch = findViewById<Switch>(R.id.parallelBrowsingSwitch)
+        val parallelBrowsingRow = findViewById<View>(R.id.parallelBrowsingRow)
+        val parallelBrowsingSummary = findViewById<View>(R.id.parallelBrowsingSummary)
+        val supportsParallelBrowsing = WindowLayout.isTabletDevice(this)
+        parallelBrowsingSwitch.isChecked = AppPreferences.isParallelBrowsingEnabled(this)
+        parallelBrowsingSwitch.isEnabled = supportsParallelBrowsing
+        parallelBrowsingSwitch.isClickable = supportsParallelBrowsing
+        parallelBrowsingSwitch.setOnCheckedChangeListener { _, checked ->
+            if (supportsParallelBrowsing) {
+                AppPreferences.setParallelBrowsingEnabled(this, checked)
+            }
+        }
+        parallelBrowsingRow.alpha = if (supportsParallelBrowsing) 1f else 0.45f
+        parallelBrowsingSummary.alpha = if (supportsParallelBrowsing) 1f else 0.45f
+        parallelBrowsingRow.setOnClickListener {
+            if (supportsParallelBrowsing) {
+                parallelBrowsingSwitch.isChecked = !parallelBrowsingSwitch.isChecked
+            } else {
+                showParallelBrowsingUnavailableDialog()
+            }
         }
         val enhancedLikeSwitch = findViewById<Switch>(R.id.enhancedLikeSwitch)
         enhancedLikeSwitch.isChecked = AppPreferences.isEnhancedLikeInteractionEnabled(this)
@@ -534,6 +582,65 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
+    private fun applyTabletContentWidthWhenReady() {
+        if (!WindowLayout.isTabletLayout(this)) return
+        settingsContentScroll.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            applyTabletContentWidth()
+        }
+        settingsContentScroll.post { applyTabletContentWidth() }
+    }
+
+    private fun applyTabletContentWidth() {
+        if (!WindowLayout.isTabletLayout(this)) return
+        val maxWidth = resources.getDimensionPixelSize(R.dimen.settings_content_max_width)
+        val availableWidth = settingsContentScroll.width -
+            settingsContentScroll.paddingStart -
+            settingsContentScroll.paddingEnd
+        if (maxWidth <= 0 || availableWidth <= 0) return
+        val targetWidth = minOf(maxWidth, availableWidth)
+        val params = settingsContent.layoutParams as? FrameLayout.LayoutParams ?: return
+        if (params.width == targetWidth && params.gravity == android.view.Gravity.CENTER_HORIZONTAL) {
+            return
+        }
+        params.width = targetWidth
+        params.gravity = android.view.Gravity.CENTER_HORIZONTAL
+        settingsContent.layoutParams = params
+    }
+
+    private fun applyTabletCategoryGridIfNeeded() {
+        if (!WindowLayout.isTabletLayout(this)) return
+        val tiles = settingsCategoryDefinitions().map { findViewById<View>(it.rowId) }
+        tiles.forEach { tile ->
+            (tile.parent as? ViewGroup)?.removeView(tile)
+        }
+        settingsCategoryPage.removeAllViews()
+        tiles.chunked(TABLET_SETTINGS_GRID_COLUMNS).forEach { rowTiles ->
+            val row = LinearLayout(this).apply {
+                setBaselineAligned(false)
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            rowTiles.forEach { tile ->
+                val sourceParams = tile.layoutParams as? LinearLayout.LayoutParams
+                tile.layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    sourceParams?.height ?: LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    leftMargin = sourceParams?.leftMargin ?: 0
+                    topMargin = sourceParams?.topMargin ?: 0
+                    rightMargin = sourceParams?.rightMargin ?: 0
+                    bottomMargin = sourceParams?.bottomMargin ?: 0
+                }
+                row.addView(tile)
+            }
+            settingsCategoryPage.addView(row)
+        }
+    }
+
     private fun initializeSettingsPages() {
         SettingsPage.values().forEach { page ->
             settingsPages[page] = findViewById(page.viewId)
@@ -541,43 +648,27 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun bindSettingsCategoryNavigation() {
-        findViewById<View>(R.id.officialSettingsCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.OFFICIAL)
-        }
-        findViewById<View>(R.id.securityCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.SECURITY)
-        }
-        findViewById<View>(R.id.signCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.SIGN)
-        }
-        findViewById<View>(R.id.displayCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.DISPLAY)
-        }
-        findViewById<View>(R.id.interactionCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.INTERACTION)
-        }
-        findViewById<View>(R.id.networkCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.NETWORK)
-        }
-        findViewById<View>(R.id.permissionCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.PERMISSION)
-        }
-        findViewById<View>(R.id.powerCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.POWER)
-        }
-        findViewById<View>(R.id.storageCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.STORAGE)
-        }
-        findViewById<View>(R.id.officialStoreCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.OFFICIAL_LINKS)
-        }
-        findViewById<View>(R.id.aboutCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.ABOUT)
-        }
-        findViewById<View>(R.id.versionCategoryRow).setOnClickListener {
-            showSettingsPage(SettingsPage.VERSION)
+        settingsCategoryDefinitions().forEach { category ->
+            findViewById<View>(category.rowId).setOnClickListener {
+                showSettingsPage(category.page)
+            }
         }
     }
+
+    private fun settingsCategoryDefinitions() = listOf(
+        SettingsCategoryDefinition(R.id.officialSettingsCategoryRow, SettingsPage.OFFICIAL),
+        SettingsCategoryDefinition(R.id.securityCategoryRow, SettingsPage.SECURITY),
+        SettingsCategoryDefinition(R.id.signCategoryRow, SettingsPage.SIGN),
+        SettingsCategoryDefinition(R.id.displayCategoryRow, SettingsPage.DISPLAY),
+        SettingsCategoryDefinition(R.id.interactionCategoryRow, SettingsPage.INTERACTION),
+        SettingsCategoryDefinition(R.id.networkCategoryRow, SettingsPage.NETWORK),
+        SettingsCategoryDefinition(R.id.permissionCategoryRow, SettingsPage.PERMISSION),
+        SettingsCategoryDefinition(R.id.powerCategoryRow, SettingsPage.POWER),
+        SettingsCategoryDefinition(R.id.storageCategoryRow, SettingsPage.STORAGE),
+        SettingsCategoryDefinition(R.id.officialStoreCategoryRow, SettingsPage.OFFICIAL_LINKS),
+        SettingsCategoryDefinition(R.id.versionCategoryRow, SettingsPage.VERSION),
+        SettingsCategoryDefinition(R.id.aboutCategoryRow, SettingsPage.ABOUT)
+    )
 
     private fun handleSettingsBack() {
         if (settingsPageTransitionRunning) return
@@ -1176,10 +1267,22 @@ class SettingsActivity : ComponentActivity() {
                 }
             }
         }
+        applyDynamicAccentOutlineIfNeeded(view, accent, defaultAccent, previousAccent)
         if (view is ViewGroup) {
             for (index in 0 until view.childCount) {
                 applyDynamicAccentRecursively(view.getChildAt(index), accent, defaultAccent, previousAccent)
             }
+        }
+    }
+
+    private fun applyDynamicAccentOutlineIfNeeded(
+        view: View,
+        accent: Int,
+        defaultAccent: Int,
+        previousAccent: Int?
+    ) {
+        if (view.getTag(R.id.accentOutlinedButtonTag) == true) {
+            AppAccentColor.tintOutlinedButton(view, this)
         }
     }
 
@@ -1199,6 +1302,14 @@ class SettingsActivity : ComponentActivity() {
             }
             .setNegativeButton(R.string.permission_cancel, null)
             .show()
+    }
+
+    private fun showParallelBrowsingUnavailableDialog() {
+        AlertDialog.Builder(this)
+            .setMessage(R.string.parallel_browsing_unavailable_message)
+            .setPositiveButton(R.string.permission_confirm, null)
+            .show()
+            .also { tintDialogButtons(it) }
     }
 
     private fun updateLikeEffectValue() {
@@ -2021,6 +2132,7 @@ class SettingsActivity : ComponentActivity() {
         private const val SETTINGS_PAGE_FADED_ALPHA = 0.72f
         private const val SETTINGS_PAGE_OUT_DURATION_MS = 90L
         private const val SETTINGS_PAGE_IN_DURATION_MS = 150L
+        private const val TABLET_SETTINGS_GRID_COLUMNS = 4
         private const val LIKE_EFFECT_PREVIEW_INTERVAL_MS = 1000L
         private const val LIKE_EFFECT_BASE_SCALE = 2.5f
         private const val LIKE_EFFECT_DETAIL_SIZE_RATIO = 0.0533333333f

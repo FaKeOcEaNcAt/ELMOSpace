@@ -27,8 +27,10 @@ object AppPreferences {
     private const val KEY_FEED_PRELOAD = "feed_preload"
     private const val KEY_FEED_PRELOAD_SCREENS = "feed_preload_screens"
     private const val KEY_MOBILE_DATA_WARNING = "mobile_data_warning"
+    private const val KEY_USE_SYSTEM_PROXY = "use_system_proxy"
     private const val KEY_DARK_MODE = "dark_mode"
     private const val KEY_SPLASH_ANIMATION = "splash_animation"
+    private const val KEY_PARALLEL_BROWSING = "parallel_browsing"
     private const val KEY_ACCENT_COLOR_MODE = "accent_color_mode"
     private const val KEY_ACCENT_COLOR = "accent_color"
     private const val KEY_ENHANCED_LIKE_INTERACTION = "enhanced_like_interaction"
@@ -213,6 +215,13 @@ object AppPreferences {
         preferences(context).edit().putBoolean(KEY_MOBILE_DATA_WARNING, enabled).apply()
     }
 
+    fun isUseSystemProxyEnabled(context: Context) =
+        preferences(context).getBoolean(KEY_USE_SYSTEM_PROXY, false)
+
+    fun setUseSystemProxyEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit().putBoolean(KEY_USE_SYSTEM_PROXY, enabled).apply()
+    }
+
     fun getDarkMode(context: Context) =
         preferences(context).getInt(KEY_DARK_MODE, DARK_MODE_FOLLOW_SYSTEM)
             .coerceIn(DARK_MODE_FOLLOW_SYSTEM, DARK_MODE_ON)
@@ -229,6 +238,15 @@ object AppPreferences {
     fun setSplashAnimationEnabled(context: Context, enabled: Boolean) {
         preferences(context).edit()
             .putBoolean(KEY_SPLASH_ANIMATION, enabled)
+            .apply()
+    }
+
+    fun isParallelBrowsingEnabled(context: Context) =
+        preferences(context).getBoolean(KEY_PARALLEL_BROWSING, true)
+
+    fun setParallelBrowsingEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit()
+            .putBoolean(KEY_PARALLEL_BROWSING, enabled)
             .apply()
     }
 

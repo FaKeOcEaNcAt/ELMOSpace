@@ -105,6 +105,9 @@
     <string name="mobile_data_usage_title">移动数据消耗统计</string>
     <string name="mobile_data_usage_summary">查看今日、近五日和本月的移动数据使用趋势</string>
     <string name="mobile_data_usage_notice">仅统计本 APP 运行期间通过移动网络产生的收发流量，包含网页、图片、接口和后台服务。数据仅保存在本机，统计结果可能与运营商账单存在少量差异。</string>
+    <string name="use_system_proxy">使用系统代理</string>
+    <string name="use_system_proxy_summary">开启后 WebView 和 APP 原生网络请求会使用系统代理；关闭后默认直连，不使用系统代理。</string>
+    <string name="use_system_proxy_legacy_notice">当前系统版本不支持可靠切换 WebView 代理；该开关仍会影响 APP 原生网络请求。</string>
     <string name="usage_today">今日</string>
     <string name="usage_five_days">近五日</string>
     <string name="usage_month">本月</string>
@@ -219,6 +222,10 @@
     <string name="dark_mode_follow_system">跟随系统</string>
     <string name="dark_mode_on">开启</string>
     <string name="dark_mode_off">关闭</string>
+    <string name="settings_browsing_section">浏览</string>
+    <string name="parallel_browsing">平行浏览</string>
+    <string name="parallel_browsing_summary">允许用户在日常浏览中充分利用平板的大屏优势，在主页访问文章的时候可以直接在侧边空闲的空间打开贴文，和主页平行浏览</string>
+    <string name="parallel_browsing_unavailable_message">这个是大屏设备专属的功能，放在手机上浏览可能效果不佳，请谅解</string>
     <string name="accent_color_title">修改App强调色</string>
     <string name="accent_color_default">追放橙(#F26C1C  (242,108,28))</string>
     <string name="accent_color_wheel">自定义(调色盘)</string>
@@ -235,7 +242,7 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.25 Build2608140127</string>
+    <string name="version_display">V0.1.26 Build2608220006</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
@@ -248,8 +255,8 @@
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="current_version_changelog_section">当前版本更新日志</string>
-    <item name="current_version_changelog_title" type="string">@string/changelog_v035_title</item>
-    <item name="current_version_changelog_body" type="string">@string/changelog_v035_body</item>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v036_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v036_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
@@ -288,6 +295,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v036_title">V0.1.26 Build2608220006</string>
+    <string name="changelog_v036_body">• 新增大屏设备平行浏览能力，平板在主页访问贴文时可在侧边空间打开内容，提升大屏浏览效率。\n• 设置的显示页面新增“平行浏览”开关，手机设备会保留入口但提示该功能为大屏专属。\n• 优化平板和竖屏设备的界面适配，让主页、底栏和设置页在不同屏幕尺寸下更稳定。\n• 修复部分按钮边框没有跟随 App 强调色变化的问题，使按钮文字和边框颜色保持一致。\n• 网络设置新增“使用系统代理”开关，可在需要时让 App 网页访问和原生网络请求跟随系统代理。</string>
     <string name="changelog_v035_title">V0.1.25 Build2608140127</string>
     <string name="changelog_v035_body">• 优化 App 内置下载器，下载更新失败时会自动重试，提升 GitHub 服务不稳定时的成功率。\n• 下载更新的每次重试之间会短暂等待，避免连续请求造成额外失败。\n• 修复取消下载时可能长时间停留在“正在取消下载”的问题。\n• 下载超时提示改为更明确的中文说明，方便判断是否需要检查网络或切换下载方式。</string>
     <string name="changelog_v034_title">V0.1.24 Build2608140112</string>

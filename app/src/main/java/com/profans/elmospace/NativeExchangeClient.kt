@@ -5,7 +5,6 @@ import com.profans.elmospace.WebConstants.EXCHANGE_SUBMIT_URL
 import com.profans.elmospace.WebConstants.MEMBER_INFO_URL
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.URL
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -58,13 +57,13 @@ object NativeExchangeClient {
         val token = AppPreferences.getSignAuthToken(context)
         if (token.isBlank()) return SyncResult.LoginInvalid
 
-        val score = when (val result = fetchScore(token)) {
+        val score = when (val result = fetchScore(context, token)) {
             ScoreResult.LoginInvalid -> return SyncResult.LoginInvalid
             ScoreResult.Unavailable -> return SyncResult.InterfaceUnavailable
             is ScoreResult.Success -> result.score
         }
         val listResponse = runCatching {
-            request(EXCHANGE_LIST_URL, METHOD_GET, token)
+            request(context, EXCHANGE_LIST_URL, METHOD_GET, token)
         }.getOrElse { return SyncResult.InterfaceUnavailable }
         if (listResponse.isLoginInvalid()) return SyncResult.LoginInvalid
         if (!listResponse.isSuccess()) return SyncResult.InterfaceUnavailable
@@ -82,6 +81,7 @@ object NativeExchangeClient {
 
         val response = runCatching {
             request(
+                context,
                 EXCHANGE_SUBMIT_URL,
                 METHOD_POST,
                 token,
@@ -142,9 +142,9 @@ object NativeExchangeClient {
         }.filter { it.exchangeId > 0 && it.itemName.isNotBlank() }
     }
 
-    private fun fetchScore(token: String): ScoreResult {
+    private fun fetchScore(context: android.content.Context, token: String): ScoreResult {
         val response = runCatching {
-            request(MEMBER_INFO_URL, METHOD_POST, token, EMPTY_JSON_BODY)
+            request(context, MEMBER_INFO_URL, METHOD_POST, token, EMPTY_JSON_BODY)
         }.getOrNull() ?: return ScoreResult.Unavailable
         if (response.isLoginInvalid()) return ScoreResult.LoginInvalid
         if (!response.isSuccess()) return ScoreResult.Unavailable
@@ -157,12 +157,13 @@ object NativeExchangeClient {
     }
 
     private fun request(
+        context: android.content.Context,
         url: String,
         method: String,
         token: String,
         body: String? = null
     ): ApiResponse {
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+        val connection = AppNetworkProxy.openHttpConnection(context, url).apply {
             requestMethod = method
             connectTimeout = TIMEOUT_MS
             readTimeout = TIMEOUT_MS

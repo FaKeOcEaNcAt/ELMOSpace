@@ -6,7 +6,6 @@ import com.profans.elmospace.WebConstants.SIGN_IN_URL
 import com.profans.elmospace.WebConstants.SIGN_STATUS_URL
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.URL
 import org.json.JSONObject
 
 object NativeSignInClient {
@@ -26,7 +25,7 @@ object NativeSignInClient {
         if (token.isBlank()) return Result.LoginInvalid
 
         val status = runCatching {
-            request(SIGN_STATUS_URL, METHOD_GET, token)
+            request(context, SIGN_STATUS_URL, METHOD_GET, token)
         }.getOrElse { return Result.InterfaceUnavailable }
         if (status.isLoginInvalid()) return Result.LoginInvalid
         if (!status.isSuccess()) return Result.InterfaceUnavailable
@@ -35,7 +34,7 @@ object NativeSignInClient {
             ?: return Result.InterfaceUnavailable
         if (!statusData.has("has_sign_in")) return Result.InterfaceUnavailable
         if (statusData.optBoolean("has_sign_in")) {
-            val score = fetchScore(token)
+            val score = fetchScore(context, token)
             return if (score.isNullOrBlank()) {
                 Result.AlreadySigned
             } else {
@@ -44,12 +43,12 @@ object NativeSignInClient {
         }
 
         val sign = runCatching {
-            request(SIGN_IN_URL, METHOD_POST, token, EMPTY_JSON_BODY)
+            request(context, SIGN_IN_URL, METHOD_POST, token, EMPTY_JSON_BODY)
         }.getOrElse { return Result.InterfaceUnavailable }
         if (sign.isLoginInvalid()) return Result.LoginInvalid
         if (!sign.isSuccess()) return Result.InterfaceUnavailable
 
-        val score = fetchScore(token)
+        val score = fetchScore(context, token)
         return if (score.isNullOrBlank()) {
             Result.SignedWithoutScore
         } else {
@@ -57,9 +56,9 @@ object NativeSignInClient {
         }
     }
 
-    private fun fetchScore(token: String): String? {
+    private fun fetchScore(context: Context, token: String): String? {
         val response = runCatching {
-            request(MEMBER_INFO_URL, METHOD_POST, token, EMPTY_JSON_BODY)
+            request(context, MEMBER_INFO_URL, METHOD_POST, token, EMPTY_JSON_BODY)
         }.getOrNull() ?: return null
         if (!response.isSuccess()) return null
 
@@ -69,12 +68,13 @@ object NativeSignInClient {
     }
 
     private fun request(
+        context: Context,
         url: String,
         method: String,
         token: String,
         body: String? = null
     ): ApiResponse {
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+        val connection = AppNetworkProxy.openHttpConnection(context, url).apply {
             requestMethod = method
             connectTimeout = TIMEOUT_MS
             readTimeout = TIMEOUT_MS

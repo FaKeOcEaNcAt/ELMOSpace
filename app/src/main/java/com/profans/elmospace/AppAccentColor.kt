@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.view.View
+import android.widget.TextView
 import android.widget.ProgressBar
 import android.widget.Switch
 import androidx.core.content.ContextCompat
@@ -50,6 +52,22 @@ object AppAccentColor {
             setStroke(1, strokeColor)
         }
 
+    fun outlinedButtonDrawable(context: Context): GradientDrawable =
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(Color.TRANSPARENT)
+            cornerRadius = 17f * context.resources.displayMetrics.density
+            setStroke((1f * context.resources.displayMetrics.density + 0.5f).toInt(), color(context))
+        }
+
+    fun tintOutlinedButton(view: View, context: Context) {
+        view.setTag(R.id.accentOutlinedButtonTag, true)
+        view.background = outlinedButtonDrawable(context)
+        if (view is TextView) {
+            view.setTextColor(color(context))
+        }
+    }
+
     fun selectedStateList(context: Context): ColorStateList {
         val unselected = ContextCompat.getColor(context, R.color.nav_unselected)
         return ColorStateList(
@@ -62,11 +80,11 @@ object AppAccentColor {
         val unselected = ContextCompat.getColor(context, R.color.nav_unselected)
         return ColorStateList(
             arrayOf(
-                intArrayOf(android.R.attr.state_checked),
                 intArrayOf(-android.R.attr.state_enabled),
+                intArrayOf(android.R.attr.state_checked),
                 intArrayOf()
             ),
-            intArrayOf(color(context), withAlpha(unselected, 0.55f), unselected)
+            intArrayOf(withAlpha(unselected, 0.55f), color(context), unselected)
         )
     }
 
@@ -74,11 +92,11 @@ object AppAccentColor {
         val unselected = ContextCompat.getColor(context, R.color.nav_unselected)
         return ColorStateList(
             arrayOf(
-                intArrayOf(android.R.attr.state_checked),
                 intArrayOf(-android.R.attr.state_enabled),
+                intArrayOf(android.R.attr.state_checked),
                 intArrayOf()
             ),
-            intArrayOf(withAlpha(color(context), 0.52f), withAlpha(unselected, 0.30f), withAlpha(unselected, 0.42f))
+            intArrayOf(withAlpha(unselected, 0.30f), withAlpha(color(context), 0.52f), withAlpha(unselected, 0.42f))
         )
     }
 
