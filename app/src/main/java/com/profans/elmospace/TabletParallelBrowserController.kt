@@ -1,6 +1,7 @@
 package com.profans.elmospace
 
 import android.content.Context
+import android.net.Uri
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 
 internal class TabletParallelBrowserController(
@@ -27,6 +29,9 @@ internal class TabletParallelBrowserController(
     private val createBridge: () -> Any
 ) {
     private var detailPane: LinearLayout? = null
+    private var detailErrorOverlay: View? = null
+    private var entryTopicId: String? = null
+    private var lastRequestedUrl: String? = null
     var detailWebView: WebView? = null
         private set
 
@@ -53,6 +58,45 @@ internal class TabletParallelBrowserController(
         val detailWeb = WebView(context).apply {
             setBackgroundColor(ContextCompat.getColor(context, R.color.app_background))
         }
+        val detailContent = FrameLayout(context)
+        val errorOverlay = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+            isClickable = true
+            setBackgroundColor(ContextCompat.getColor(context, R.color.app_background))
+        }
+        errorOverlay.addView(TextView(context).apply {
+            setText(R.string.page_load_failed)
+            setTextColor(ContextCompat.getColor(context, R.color.error_text))
+            textSize = 22f
+        })
+        errorOverlay.addView(TextView(context).apply {
+            setText(R.string.page_load_failed_detail)
+            setTextColor(ContextCompat.getColor(context, R.color.nav_unselected))
+            textSize = 14f
+        }, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = 8.dp() })
+        errorOverlay.addView(TextView(context).apply {
+            setText(R.string.retry)
+            setTextColor(ContextCompat.getColor(context, R.color.white))
+            setBackgroundResource(R.drawable.bg_retry_button)
+            setPadding(24.dp(), 12.dp(), 24.dp(), 12.dp())
+            setOnClickListener { lastRequestedUrl?.let(detailWeb::loadUrl) }
+        }, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = 24.dp() })
+        detailContent.addView(detailWeb, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        detailContent.addView(errorOverlay, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
 
         configureWebViewSettings(detailWeb)
         CookieManager.getInstance().setAcceptThirdPartyCookies(detailWeb, true)
@@ -65,7 +109,7 @@ internal class TabletParallelBrowserController(
             LinearLayout.LayoutParams(1.dp(), ViewGroup.LayoutParams.MATCH_PARENT)
         )
         pane.addView(
-            detailWeb,
+            detailContent,
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
         )
         contentFrame.addView(
@@ -75,6 +119,7 @@ internal class TabletParallelBrowserController(
 
         detailPane = pane
         detailWebView = detailWeb
+        detailErrorOverlay = errorOverlay
         contentFrame.post { applyContentWidth() }
     }
 
@@ -87,6 +132,9 @@ internal class TabletParallelBrowserController(
         setupIfNeeded()
         val pane = detailPane ?: return
         val detailWeb = detailWebView ?: return
+        entryTopicId = Uri.parse(url).getQueryParameter("id")
+        lastRequestedUrl = url
+        detailErrorOverlay?.visibility = View.GONE
 
         masterWebView.animate().cancel()
         masterWebView.alpha = 1f
@@ -109,17 +157,8 @@ internal class TabletParallelBrowserController(
         detailWeb.loadUrl(url)
     }
 
-    fun close(clearContent: Boolean = true) {
-        val pane = detailPane ?: return
-        val detailWeb = detailWebView ?: return
-        if (pane.visibility != View.VISIBLE) return
-        pane.animate().cancel()
-        pane.visibility = View.GONE
-        if (clearContent) {
-            detailWeb.stopLoading()
-            detailWeb.loadUrl("about:blank")
-        }
-        applyContentWidth()
+    fun close() {
+        closeAndDestroy()
     }
 
     fun closeIfReturnedToMaster(url: String?, isMasterUrl: (String?) -> Boolean): Boolean {
@@ -134,10 +173,11 @@ internal class TabletParallelBrowserController(
     fun handleBack(shouldCloseForUri: (android.net.Uri?) -> Boolean): Boolean {
         if (!isDetailVisible()) return false
         val detailWeb = detailWebView ?: return false
-        val detailUri = runCatching {
-            android.net.Uri.parse(detailWeb.url ?: "")
-        }.getOrNull()
-        if (shouldCloseForUri(detailUri)) {
+        val detailUri = runCatching { Uri.parse(detailWeb.url ?: "") }.getOrNull()
+        if (shouldCloseForUri(detailUri) ||
+            (detailUri?.path == "/m/threadInfo" &&
+                detailUri.getQueryParameter("id") == entryTopicId)
+        ) {
             close()
         } else if (detailWeb.canGoBack()) {
             detailWeb.goBack()
@@ -150,6 +190,11 @@ internal class TabletParallelBrowserController(
     fun closeAndDestroy() {
         val pane = detailPane
         val detailWeb = detailWebView
+        detailPane = null
+        detailWebView = null
+        detailErrorOverlay = null
+        entryTopicId = null
+        lastRequestedUrl = null
         if (pane != null) {
             pane.animate().cancel()
             contentFrame.removeView(pane)
@@ -161,9 +206,16 @@ internal class TabletParallelBrowserController(
             it.webViewClient = WebViewClient()
             it.destroy()
         }
-        detailPane = null
-        detailWebView = null
         applyContentWidth()
+    }
+
+    fun hideLoadError() {
+        detailErrorOverlay?.visibility = View.GONE
+    }
+
+    fun showLoadError(url: String?) {
+        if (!isDetailVisible() || url != detailWebView?.url) return
+        detailErrorOverlay?.visibility = View.VISIBLE
     }
 
     fun destroy() {

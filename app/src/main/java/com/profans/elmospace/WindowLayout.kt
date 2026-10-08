@@ -24,6 +24,17 @@ object WindowLayout {
             configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
+    fun hasParallelBrowsingSpace(context: Context): Boolean {
+        val resources = context.resources
+        val availablePixels =
+            (resources.configuration.screenWidthDp * resources.displayMetrics.density).toInt() -
+                resources.getDimensionPixelSize(R.dimen.main_nav_rail_width) -
+                2 * resources.getDimensionPixelSize(R.dimen.main_tablet_content_horizontal_padding)
+        val requiredPixels = resources.getDimensionPixelSize(R.dimen.tablet_parallel_master_min_width) +
+            resources.getDimensionPixelSize(R.dimen.tablet_parallel_detail_min_width)
+        return availablePixels >= requiredPixels
+    }
+
     fun lockPhonePortrait(activity: Activity) {
         activity.requestedOrientation = if (isTabletDevice(activity)) {
             ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED

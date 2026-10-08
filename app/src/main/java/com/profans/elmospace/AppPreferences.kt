@@ -1,10 +1,18 @@
 package com.profans.elmospace
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
 import org.json.JSONObject
+import java.security.KeyStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 object AppPreferences {
     private const val FILE_NAME = "app_settings"
@@ -16,6 +24,13 @@ object AppPreferences {
     private const val KEY_SIGN_HOUR = "sign_hour"
     private const val KEY_SIGN_MINUTE = "sign_minute"
     private const val KEY_SIGN_AUTH_TOKEN = "sign_auth_token"
+    private const val KEY_ENCRYPTED_SIGN_AUTH_TOKEN = "sign_auth_token_encrypted"
+    private const val SIGN_AUTH_KEY_ALIAS = "com.profans.elmospace.sign_auth_token"
+    private const val SIGN_AUTH_CIPHER = "AES/GCM/NoPadding"
+    private const val SIGN_AUTH_TOKEN_FORMAT = "v1:"
+    private const val SIGN_AUTH_IV_BYTES = 12
+    private const val SIGN_AUTH_TAG_BITS = 128
+    private val signAuthTokenLock = Any()
     private const val KEY_SCHEDULED_SIGN_IN_AUTO_ENABLED_ONCE =
         "scheduled_sign_in_auto_enabled_once"
     private const val KEY_AUTO_EXCHANGE_ENABLED = "auto_exchange_enabled"
@@ -106,19 +121,76 @@ object AppPreferences {
             .apply()
     }
 
-    fun getSignAuthToken(context: Context) =
-        preferences(context).getString(KEY_SIGN_AUTH_TOKEN, null).orEmpty()
+    fun getSignAuthToken(context: Context): String = synchronized(signAuthTokenLock) {
+        val prefs = preferences(context)
+        val encrypted = prefs.getString(KEY_ENCRYPTED_SIGN_AUTH_TOKEN, null)
+        if (encrypted != null) {
+            return@synchronized runCatching { decryptSignAuthToken(encrypted) }.getOrDefault("")
+        }
 
-    fun setSignAuthToken(context: Context, token: String) {
-        preferences(context).edit()
-            .putString(KEY_SIGN_AUTH_TOKEN, token)
-            .apply()
+        val legacyToken = prefs.getString(KEY_SIGN_AUTH_TOKEN, null).orEmpty()
+        if (legacyToken.isBlank()) return@synchronized ""
+        if (storeEncryptedSignAuthToken(context, legacyToken)) legacyToken else ""
     }
 
+    fun setSignAuthToken(context: Context, token: String): Boolean =
+        synchronized(signAuthTokenLock) {
+            token.isNotBlank() && storeEncryptedSignAuthToken(context, token)
+        }
+
     fun clearSignAuthToken(context: Context) {
-        preferences(context).edit()
+        synchronized(signAuthTokenLock) {
+            preferences(context).edit()
+                .remove(KEY_SIGN_AUTH_TOKEN)
+                .remove(KEY_ENCRYPTED_SIGN_AUTH_TOKEN)
+                .commit()
+        }
+    }
+
+    private fun storeEncryptedSignAuthToken(context: Context, token: String): Boolean {
+        val encrypted = runCatching { encryptSignAuthToken(token) }.getOrNull() ?: return false
+        return preferences(context).edit()
+            .putString(KEY_ENCRYPTED_SIGN_AUTH_TOKEN, encrypted)
             .remove(KEY_SIGN_AUTH_TOKEN)
-            .apply()
+            .commit()
+    }
+
+    private fun encryptSignAuthToken(token: String): String {
+        val cipher = Cipher.getInstance(SIGN_AUTH_CIPHER)
+        cipher.init(Cipher.ENCRYPT_MODE, signAuthKey())
+        val payload = cipher.iv + cipher.doFinal(token.toByteArray(Charsets.UTF_8))
+        return SIGN_AUTH_TOKEN_FORMAT + Base64.encodeToString(payload, Base64.NO_WRAP)
+    }
+
+    private fun decryptSignAuthToken(value: String): String {
+        require(value.startsWith(SIGN_AUTH_TOKEN_FORMAT))
+        val payload = Base64.decode(value.removePrefix(SIGN_AUTH_TOKEN_FORMAT), Base64.NO_WRAP)
+        require(payload.size > SIGN_AUTH_IV_BYTES + SIGN_AUTH_TAG_BITS / 8)
+        val cipher = Cipher.getInstance(SIGN_AUTH_CIPHER)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            signAuthKey(),
+            GCMParameterSpec(SIGN_AUTH_TAG_BITS, payload.copyOfRange(0, SIGN_AUTH_IV_BYTES))
+        )
+        return String(cipher.doFinal(payload.copyOfRange(SIGN_AUTH_IV_BYTES, payload.size)), Charsets.UTF_8)
+    }
+
+    private fun signAuthKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (keyStore.getKey(SIGN_AUTH_KEY_ALIAS, null) as? SecretKey)?.let { return it }
+
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                SIGN_AUTH_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build()
+        )
+        return generator.generateKey()
     }
 
     fun isScheduledSignInAutoEnabledOnce(context: Context) =

@@ -311,8 +311,7 @@ object WebInjectionScripts {
             const bridgeName = $bridgeNameLiteral;
             const bridge = window[bridgeName];
             if (!bridge || !bridge.openTabletThreadInfo) return false;
-            if (window.__androidTabletThreadSplitInstalled) return true;
-            window.__androidTabletThreadSplitInstalled = true;
+            if (window.__androidTabletThreadSplitHandler) return true;
 
             const collectTopicModels = function(value, results, visited, depth) {
                 if (!value || typeof value !== 'object' || depth > 5) return;
@@ -456,7 +455,7 @@ object WebInjectionScripts {
                 return true;
             };
 
-            document.addEventListener('click', function(event) {
+            const splitClickHandler = function(event) {
                 const target = event.target;
                 if (!target || !target.closest) return;
                 const pinnedNewsRow = findPinnedNewsRow(target);
@@ -466,7 +465,7 @@ object WebInjectionScripts {
                 }
                 const card = target.closest('.card_item');
                 if (shouldIgnore(target, card)) return;
-                const activeArea = target.closest('.card_t, .card_m, .card_b_item, .img_box');
+                const activeArea = target.closest('.card_m, .card_b_item, .img_box');
                 if (!activeArea || !card.contains(activeArea)) return;
                 const post = findPostModel(card);
                 if (!openPostInTabletPane(event, post)) {
@@ -475,11 +474,23 @@ object WebInjectionScripts {
                         time: Date.now()
                     };
                 }
-            }, true);
+            };
+            document.addEventListener('click', splitClickHandler, true);
+            window.__androidTabletThreadSplitHandler = splitClickHandler;
             return true;
         })();
         """.trimIndent()
     }
+
+    fun removeTabletThreadSplitInterceptor(): String = """
+        (function() {
+            const handler = window.__androidTabletThreadSplitHandler;
+            if (!handler) return false;
+            document.removeEventListener('click', handler, true);
+            delete window.__androidTabletThreadSplitHandler;
+            return true;
+        })();
+    """.trimIndent()
 
     fun clickWebNavItem(webIndex: Int): String =
         """

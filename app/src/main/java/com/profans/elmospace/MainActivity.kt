@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
 import android.content.ClipData
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -15,6 +16,7 @@ import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Base64
 import android.view.View
@@ -112,6 +114,7 @@ class MainActivity : ComponentActivity() {
     private var pendingAcceptTypes: Array<String> = emptyArray()
     private var pendingAllowMultiple = false
     private var cameraImageUri: Uri? = null
+    private var cameraImageFile: File? = null
 
     private var geolocationOrigin: String? = null
     private var geolocationCallback: GeolocationPermissions.Callback? = null
@@ -234,14 +237,18 @@ class MainActivity : ComponentActivity() {
             injectDarkModeStyles(webView.url)
             injectEnhancedLikeInteraction(webView.url)
             if (isParallelBrowsingActive()) {
-                setupTabletDetailPaneIfNeeded()
+                if (selectedTab == TAB_HOME && isRootUrl(webView.url)) {
+                    injectTabletThreadSplitInterceptor()
+                }
             } else {
                 destroyTabletDetailPane()
+            }
+            if (selectedTab != TAB_HOME || !isParallelBrowsingActive()) {
+                removeTabletThreadSplitInterceptor()
             }
             if (isRootUrl(webView.url)) {
                 injectFeedImagePreloader()
                 injectHomeSliderPaginationFix()
-                injectTabletThreadSplitInterceptor()
             }
         }
     }
@@ -275,7 +282,6 @@ class MainActivity : ComponentActivity() {
             createBridge = { NativeUiBridge() }
         )
         tabletParallelBrowser.attachLayoutListener()
-        setupTabletDetailPaneIfNeeded()
     }
 
     private fun showMobileDataWarningIfNeeded() {
@@ -384,6 +390,7 @@ class MainActivity : ComponentActivity() {
 
     private fun isParallelBrowsingActive(): Boolean {
         return WindowLayout.isTabletLandscapeLayout(this) &&
+            WindowLayout.hasParallelBrowsingSpace(this) &&
             AppPreferences.isParallelBrowsingEnabled(this)
     }
 
@@ -405,6 +412,8 @@ class MainActivity : ComponentActivity() {
         closeTabletDetailPane()
         selectedTab = tab
         selectNativeTab(tab)
+        if (tab == TAB_HOME) injectTabletThreadSplitInterceptor()
+        else removeTabletThreadSplitInterceptor()
 
         if (isRootUrl(webView.url)) {
             pendingRootTab = tab
@@ -446,6 +455,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createWebViewClient() = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            if (!request.isForMainFrame) return false
             return handleMainFrameNavigation(request.url)
         }
 
@@ -573,6 +583,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createTabletDetailWebViewClient() = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            if (!request.isForMainFrame) return false
             return handleTabletDetailNavigation(view, request.url)
         }
 
@@ -586,6 +597,10 @@ class MainActivity : ComponentActivity() {
             injectTabletDetailScripts(view, url)
         }
 
+        override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+            tabletParallelBrowser.hideLoadError()
+        }
+
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
             if (closeTabletDetailPaneIfReturnedToMaster(url)) return
             injectTabletDetailScripts(view, url)
@@ -595,12 +610,33 @@ class MainActivity : ComponentActivity() {
             injectDarkModeStyles(url, view)
         }
 
+        override fun onReceivedError(
+            view: WebView,
+            request: WebResourceRequest,
+            error: WebResourceError
+        ) {
+            if (request.isForMainFrame) {
+                tabletParallelBrowser.showLoadError(request.url.toString())
+            }
+        }
+
+        override fun onReceivedHttpError(
+            view: WebView,
+            request: WebResourceRequest,
+            errorResponse: WebResourceResponse
+        ) {
+            if (request.isForMainFrame && errorResponse.statusCode >= 400) {
+                tabletParallelBrowser.showLoadError(request.url.toString())
+            }
+        }
+
         override fun onReceivedSslError(
             view: WebView,
             handler: SslErrorHandler,
             error: android.net.http.SslError
         ) {
             handler.cancel()
+            tabletParallelBrowser.showLoadError(error.url)
             Toast.makeText(this@MainActivity, R.string.page_load_failed, Toast.LENGTH_SHORT).show()
         }
 
@@ -677,6 +713,10 @@ class MainActivity : ComponentActivity() {
 
     private fun handleTabletDetailNavigation(view: WebView, uri: Uri): Boolean {
         val normalizedInternalUri = normalizeInternalNavigationUri(uri)
+        if (isRootUrl((normalizedInternalUri ?: uri).toString())) {
+            closeTabletDetailPane()
+            return true
+        }
         if (normalizedInternalUri != null && normalizedInternalUri != uri) {
             view.loadUrl(normalizedInternalUri.toString())
             return true
@@ -734,9 +774,9 @@ class MainActivity : ComponentActivity() {
 
     private fun shouldOpenInTabletDetail(uri: Uri): Boolean {
         return isParallelBrowsingActive() &&
+            selectedTab == TAB_HOME &&
             isRootUrl(webView.url) &&
-            isThreadInfoUri(uri) &&
-            tabletParallelBrowser.hasDetailWebView()
+            isThreadInfoUri(uri)
     }
 
     private fun isSettingsUrl(url: String?): Boolean {
@@ -2221,10 +2261,9 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 val topicId = topicIdValue.toLongOrNull()?.takeIf { it > 0L }
                     ?: return@runOnUiThread
-                if (!isRootUrl(webView.url)) return@runOnUiThread
+                if (!isRootUrl(webView.url) || selectedTab != TAB_HOME) return@runOnUiThread
                 val targetUrl = "$HOME_URL_PREFIX/threadInfo?id=$topicId&hash_flag=1"
                 if (isParallelBrowsingActive()) {
-                    setupTabletDetailPaneIfNeeded()
                     openTabletDetailPane(targetUrl)
                 } else {
                     startThreadForwardTransition(targetUrl)
@@ -2358,8 +2397,9 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun onSignAuthTokenDetected(token: String) {
             if (token.isNotBlank() && token.length <= MAX_SIGN_AUTH_TOKEN_LENGTH) {
-                AppPreferences.setSignAuthToken(applicationContext, token)
-                enableScheduledSignInAfterFirstLogin()
+                if (AppPreferences.setSignAuthToken(applicationContext, token)) {
+                    enableScheduledSignInAfterFirstLogin()
+                }
             }
         }
 
@@ -2510,11 +2550,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun injectTabletThreadSplitInterceptor() {
-        if (!isParallelBrowsingActive() || !isRootUrl(webView.url)) return
+        if (!isParallelBrowsingActive() || selectedTab != TAB_HOME ||
+            !isRootUrl(webView.url)
+        ) return
         webView.evaluateJavascript(
             WebInjectionScripts.tabletThreadSplitInterceptor(JS_BRIDGE_NAME),
             null
         )
+    }
+
+    private fun removeTabletThreadSplitInterceptor() {
+        if (!isRootUrl(webView.url)) return
+        webView.evaluateJavascript(WebInjectionScripts.removeTabletThreadSplitInterceptor(), null)
     }
 
     private fun clickWebNavItem(tab: Int, attemptsRemaining: Int) {
@@ -2697,28 +2744,58 @@ class MainActivity : ComponentActivity() {
             clipData = ClipData.newRawUri("camera-output", outputUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
-        if (intent.resolveActivity(packageManager) == null) return null
+        if (intent.resolveActivity(packageManager) == null) {
+            photoFile.delete()
+            return null
+        }
         cameraImageUri = outputUri
+        cameraImageFile = photoFile
         return intent
     }
 
     private fun handleFileChooserResult(resultCode: Int, data: Intent?) {
-        val result = when {
+        val pickedUris = when {
             resultCode != RESULT_OK -> null
+            cameraImageUri != null && cameraImageFile?.length()?.let { it > 0L } == true ->
+                arrayOf(cameraImageUri!!)
             data?.data != null || data?.clipData != null ->
-                WebChromeClient.FileChooserParams.parseResult(resultCode, data)
-            cameraImageUri != null -> arrayOf(cameraImageUri!!)
+                runCatching {
+                    WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+                }.getOrNull()
             else -> null
+        }
+        val result = pickedUris?.takeIf { uris ->
+            uris.isNotEmpty() &&
+                (pendingAllowMultiple || uris.size == 1) &&
+                runCatching {
+                    uris.all { uri ->
+                        (uri == cameraImageUri && cameraImageFile?.length()?.let { it > 0L } == true) ||
+                            isSafeUploadUri(uri)
+                    }
+                }.getOrDefault(false)
+        }
+        if (resultCode == RESULT_OK && result == null) {
+            Toast.makeText(this, R.string.upload_file_invalid, Toast.LENGTH_SHORT).show()
         }
         filePathCallback?.onReceiveValue(result)
         clearFileChooserState()
     }
 
+    private fun isSafeUploadUri(uri: Uri): Boolean {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return false
+        val authority = uri.authority ?: return false
+        if (authority.equals("${packageName}.fileprovider", ignoreCase = true)) return false
+        if (!DocumentsContract.isDocumentUri(this, uri)) return false
+        return packageManager.resolveContentProvider(authority, 0)?.packageName != packageName
+    }
+
     private fun clearFileChooserState() {
+        cameraImageFile?.takeIf { it.length() == 0L }?.delete()
         filePathCallback = null
         pendingAcceptTypes = emptyArray()
         pendingAllowMultiple = false
         cameraImageUri = null
+        cameraImageFile = null
     }
 
     private fun hasPermission(permission: String) =
@@ -2756,7 +2833,7 @@ class MainActivity : ComponentActivity() {
             resetWebViewVisualState()
         }
         if (tabletParallelBrowser.handleBack { uri ->
-                uri == null || isThreadInfoUri(uri) || isRootUrl(uri.toString())
+                uri == null || isRootUrl(uri.toString())
             }) {
             return
         }

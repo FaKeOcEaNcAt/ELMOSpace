@@ -32,7 +32,7 @@
     <string name="like_effect_pick_first">请先选择图片</string>
     <string name="like_effect_limit_reached">自定义表情包数量已达到上限</string>
     <string name="like_effect_file_too_large">图片文件过大，请先压缩到 3MB 以内</string>
-    <string name="like_effect_decode_failed">图片解析失败，请更换 PNG 或 WebP 图片</string>
+    <string name="like_effect_decode_failed">图片解析失败或尺寸过大，请更换 PNG 或 WebP 图片</string>
     <string name="like_effect_save_failed">保存失败，请重试</string>
     <string name="like_effect_save_success">表情包已添加</string>
     <string name="like_effect_duration">表情包驻留时间</string>
@@ -53,6 +53,7 @@
     <string name="page_load_failed_detail">请检查网络连接后重试</string>
     <string name="retry">重新加载</string>
     <string name="cannot_open_link">无法打开该链接</string>
+    <string name="upload_file_invalid">所选文件无法安全读取，请重新选择</string>
     <string name="choose_upload_source">选择上传方式</string>
     <string name="auto_sign_in_success">自动签到成功</string>
     <string name="auto_sign_in_login_required">APP未登录，登录后可自动签到</string>
@@ -242,7 +243,7 @@
     <string name="splash_animation">App启动动画</string>
     <string name="about_title">关于</string>
     <string name="beta_label">Beta测试版</string>
-    <string name="version_display">V0.1.26 Build2608220006</string>
+    <string name="version_display">V0.1.27 Build2610081830</string>
     <string name="about_app_subtitle">非官方社区 WebView 客户端</string>
     <string name="about_software_section">软件说明</string>
     <string name="about_privacy_section">隐私与声明</string>
@@ -255,8 +256,8 @@
     <string name="version_history">版本更新记录</string>
     <string name="version_history_summary">查看各版本新增功能与问题修复</string>
     <string name="current_version_changelog_section">当前版本更新日志</string>
-    <item name="current_version_changelog_title" type="string">@string/changelog_v036_title</item>
-    <item name="current_version_changelog_body" type="string">@string/changelog_v036_body</item>
+    <item name="current_version_changelog_title" type="string">@string/changelog_v037_title</item>
+    <item name="current_version_changelog_body" type="string">@string/changelog_v037_body</item>
     <string name="startup_update_check">启动时检查更新</string>
     <string name="startup_update_check_summary">打开 App 时自动检查 GitHub Release 是否有新版本</string>
     <string name="startup_update_check_frequency">启动时检查更新的频率</string>
@@ -295,6 +296,8 @@
     <string name="install_permission_denied">未获得安装权限，无法继续更新</string>
     <string name="start_install_update_failed">无法打开系统安装器，请手动前往 GitHub Release 下载</string>
     <string name="changelog_title">更新日志</string>
+    <string name="changelog_v037_title">V0.1.27 Build2610081830</string>
+    <string name="changelog_v037_body">• 提升定时签到安全性，避免其他应用触发签到任务。\n• 加强本地登录信息保护，降低凭证被直接读取的风险。\n• 优化网页上传文件的选择校验，降低误上传应用内部文件的风险。\n• 优化自定义点赞表情包导入，限制过大图片，减少内存占用和闪退风险。</string>
     <string name="changelog_v036_title">V0.1.26 Build2608220006</string>
     <string name="changelog_v036_body">• 新增大屏设备平行浏览能力，平板在主页访问贴文时可在侧边空间打开内容，提升大屏浏览效率。\n• 设置的显示页面新增“平行浏览”开关，手机设备会保留入口但提示该功能为大屏专属。\n• 优化平板和竖屏设备的界面适配，让主页、底栏和设置页在不同屏幕尺寸下更稳定。\n• 修复部分按钮边框没有跟随 App 强调色变化的问题，使按钮文字和边框颜色保持一致。\n• 网络设置新增“使用系统代理”开关，可在需要时让 App 网页访问和原生网络请求跟随系统代理。</string>
     <string name="changelog_v035_title">V0.1.25 Build2608140127</string>

@@ -19,24 +19,57 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import java.io.File
+import java.io.ByteArrayOutputStream
 import java.util.Locale
+import java.util.concurrent.Executors
 
 class LikeEffectAddActivity : ComponentActivity() {
     private lateinit var preview: ImageView
     private lateinit var nameInput: EditText
+    private lateinit var chooseButton: View
+    private lateinit var saveButton: View
     private var selectedUri: Uri? = null
+    private var selectedBitmap: Bitmap? = null
     private var selectedDisplayName: String = ""
+    private var selectionGeneration = 0
+    private var isSaving = false
+    private val imageExecutor = Executors.newSingleThreadExecutor()
 
     private val imagePicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
+        val previousSuggestion = selectedDisplayName.substringBeforeLast('.').take(30)
+        val shouldUpdateName = nameInput.text.isNullOrBlank() ||
+            nameInput.text.toString() == previousSuggestion
         selectedUri = uri
         selectedDisplayName = queryDisplayName(uri)
-        preview.setImageURI(uri)
-        if (nameInput.text.isNullOrBlank()) {
+        preview.setImageDrawable(null)
+        selectedBitmap?.recycle()
+        selectedBitmap = null
+        saveButton.isEnabled = false
+        if (shouldUpdateName) {
             nameInput.setText(selectedDisplayName.substringBeforeLast('.').take(30))
+        }
+        val generation = ++selectionGeneration
+        imageExecutor.execute {
+            val result = loadSelectedImage(uri)
+            runOnUiThread {
+                if (isDestroyed || generation != selectionGeneration) {
+                    if (result is ImageLoadResult.Ready) result.bitmap.recycle()
+                    return@runOnUiThread
+                }
+                when (result) {
+                    is ImageLoadResult.Ready -> {
+                        selectedBitmap = result.bitmap
+                        preview.setImageBitmap(result.bitmap)
+                        saveButton.isEnabled = true
+                    }
+                    ImageLoadResult.FileTooLarge -> showImageError(R.string.like_effect_file_too_large)
+                    ImageLoadResult.DecodeFailed -> showImageError(R.string.like_effect_decode_failed)
+                    ImageLoadResult.Failed -> showImageError(R.string.like_effect_save_failed)
+                }
+            }
         }
     }
 
@@ -53,12 +86,15 @@ class LikeEffectAddActivity : ComponentActivity() {
 
         preview = findViewById(R.id.likeEffectAddPreview)
         nameInput = findViewById(R.id.likeEffectNameInput)
-        AppAccentColor.tintOutlinedButton(findViewById(R.id.likeEffectChooseImage), this)
-        AppAccentColor.tintOutlinedButton(findViewById(R.id.likeEffectSave), this)
+        chooseButton = findViewById(R.id.likeEffectChooseImage)
+        saveButton = findViewById(R.id.likeEffectSave)
+        AppAccentColor.tintOutlinedButton(chooseButton, this)
+        AppAccentColor.tintOutlinedButton(saveButton, this)
+        saveButton.isEnabled = false
 
         findViewById<View>(R.id.likeEffectAddBack).setOnClickListener { finishWithTransition() }
-        findViewById<View>(R.id.likeEffectChooseImage).setOnClickListener { chooseImage() }
-        findViewById<View>(R.id.likeEffectSave).setOnClickListener { saveSelectedImage() }
+        chooseButton.setOnClickListener { chooseImage() }
+        saveButton.setOnClickListener { saveSelectedImage() }
         findViewById<View>(R.id.likeEffectCompressTool).setOnClickListener {
             openExternalTool(COMPRESS_IMAGE_URL)
         }
@@ -71,6 +107,7 @@ class LikeEffectAddActivity : ComponentActivity() {
     }
 
     private fun chooseImage() {
+        if (isSaving) return
         if (!LikeEffectCustomAssetRepository.canAdd(this)) {
             Toast.makeText(this, R.string.like_effect_limit_reached, Toast.LENGTH_SHORT).show()
             return
@@ -79,67 +116,106 @@ class LikeEffectAddActivity : ComponentActivity() {
     }
 
     private fun saveSelectedImage() {
-        val uri = selectedUri
-        if (uri == null) {
+        val bitmap = selectedBitmap
+        if (selectedUri == null || bitmap == null) {
             Toast.makeText(this, R.string.like_effect_pick_first, Toast.LENGTH_SHORT).show()
             return
         }
+        if (isSaving) return
         if (!LikeEffectCustomAssetRepository.canAdd(this)) {
             Toast.makeText(this, R.string.like_effect_limit_reached, Toast.LENGTH_SHORT).show()
             return
         }
 
-        val result = runCatching {
-            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: error("empty image")
-            if (bytes.size > MAX_SOURCE_BYTES) {
-                return@runCatching SaveResult.FileTooLarge
-            }
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                ?: return@runCatching SaveResult.DecodeFailed
-            val normalized = normalizeBitmap(bitmap)
-            val fileName = "custom_${System.currentTimeMillis()}.png"
-            val output = LikeEffectCustomAssetRepository.imageFile(this, fileName)
-            output.outputStream().use { stream ->
-                if (!normalized.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
-                    error("compress failed")
+        val name = nameInput.text?.toString().orEmpty().ifBlank {
+            selectedDisplayName.substringBeforeLast('.')
+        }
+        isSaving = true
+        saveButton.isEnabled = false
+        chooseButton.isEnabled = false
+        imageExecutor.execute {
+            val result = runCatching {
+                val fileName = "custom_${System.currentTimeMillis()}.png"
+                val output = LikeEffectCustomAssetRepository.imageFile(this, fileName)
+                try {
+                    output.outputStream().use { stream ->
+                        if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
+                            error("compress failed")
+                        }
+                    }
+                    if (Thread.currentThread().isInterrupted) error("save cancelled")
+                    LikeEffectCustomAssetRepository.add(this, name, fileName)
+                    SaveResult.Success
+                } catch (error: Throwable) {
+                    output.delete()
+                    throw error
+                }
+            }.getOrElse { SaveResult.Failed }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                isSaving = false
+                chooseButton.isEnabled = true
+                saveButton.isEnabled = true
+                when (result) {
+                    SaveResult.Success -> {
+                        Toast.makeText(this, R.string.like_effect_save_success, Toast.LENGTH_SHORT).show()
+                        finishWithTransition()
+                    }
+                    SaveResult.Failed -> Toast.makeText(
+                        this,
+                        R.string.like_effect_save_failed,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
-            if (normalized !== bitmap) normalized.recycle()
-            bitmap.recycle()
-            LikeEffectCustomAssetRepository.add(
-                this,
-                nameInput.text?.toString().orEmpty().ifBlank {
-                    selectedDisplayName.substringBeforeLast('.')
-                },
-                fileName
-            )
-            SaveResult.Success(output)
-        }.getOrElse {
-            SaveResult.Failed
         }
+    }
 
-        when (result) {
-            is SaveResult.Success -> {
-                Toast.makeText(this, R.string.like_effect_save_success, Toast.LENGTH_SHORT).show()
-                finishWithTransition()
+    private fun loadSelectedImage(uri: Uri): ImageLoadResult {
+        return try {
+            val bytes = contentResolver.openInputStream(uri)?.use { input ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    if (Thread.currentThread().isInterrupted) return ImageLoadResult.Failed
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > MAX_SOURCE_BYTES) return ImageLoadResult.FileTooLarge
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            } ?: return ImageLoadResult.Failed
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0 ||
+                bounds.outWidth > MAX_SOURCE_EDGE || bounds.outHeight > MAX_SOURCE_EDGE ||
+                bounds.outWidth.toLong() * bounds.outHeight > MAX_SOURCE_PIXELS ||
+                bounds.outMimeType !in SUPPORTED_IMAGE_MIME_TYPES
+            ) {
+                return ImageLoadResult.DecodeFailed
             }
-            SaveResult.FileTooLarge -> Toast.makeText(
-                this,
-                R.string.like_effect_file_too_large,
-                Toast.LENGTH_SHORT
-            ).show()
-            SaveResult.DecodeFailed -> Toast.makeText(
-                this,
-                R.string.like_effect_decode_failed,
-                Toast.LENGTH_SHORT
-            ).show()
-            SaveResult.Failed -> Toast.makeText(
-                this,
-                R.string.like_effect_save_failed,
-                Toast.LENGTH_SHORT
-            ).show()
+            var sampleSize = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sampleSize > MAX_IMAGE_EDGE) {
+                sampleSize *= 2
+            }
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                ?: return ImageLoadResult.DecodeFailed
+            val normalized = normalizeBitmap(decoded)
+            if (normalized !== decoded) decoded.recycle()
+            ImageLoadResult.Ready(normalized)
+        } catch (_: Exception) {
+            ImageLoadResult.Failed
+        } catch (_: OutOfMemoryError) {
+            ImageLoadResult.Failed
         }
+    }
+
+    private fun showImageError(message: Int) {
+        selectedUri = null
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun normalizeBitmap(bitmap: Bitmap): Bitmap {
@@ -163,6 +239,11 @@ class LikeEffectAddActivity : ComponentActivity() {
                 }
             } ?: fallback
         }.getOrDefault(fallback)
+    }
+
+    override fun onDestroy() {
+        imageExecutor.shutdownNow()
+        super.onDestroy()
     }
 
     private fun openExternalTool(url: String) {
@@ -194,15 +275,23 @@ class LikeEffectAddActivity : ComponentActivity() {
     }
 
     private sealed interface SaveResult {
-        data class Success(val file: File) : SaveResult
-        data object FileTooLarge : SaveResult
-        data object DecodeFailed : SaveResult
+        data object Success : SaveResult
         data object Failed : SaveResult
+    }
+
+    private sealed interface ImageLoadResult {
+        data class Ready(val bitmap: Bitmap) : ImageLoadResult
+        data object FileTooLarge : ImageLoadResult
+        data object DecodeFailed : ImageLoadResult
+        data object Failed : ImageLoadResult
     }
 
     private companion object {
         private const val MAX_SOURCE_BYTES = 3 * 1024 * 1024
         private const val MAX_IMAGE_EDGE = 768
+        private const val MAX_SOURCE_EDGE = 16_384
+        private const val MAX_SOURCE_PIXELS = 100_000_000L
+        private val SUPPORTED_IMAGE_MIME_TYPES = setOf("image/png", "image/webp")
         private const val COMPRESS_IMAGE_URL =
             "https://www.iloveimg.com/zh-cn/compress-image"
         private const val REMOVE_BACKGROUND_URL =
